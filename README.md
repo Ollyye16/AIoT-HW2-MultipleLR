@@ -267,7 +267,19 @@ python analysis.py     # 重新產生 figures/（需要 matplotlib）
 
 ## GPT 輔助內容
 
-> TODO（同學自行填寫）：說明哪些部分有使用 ChatGPT / Claude 協助（例如程式撰寫、統計解釋），並附上對話 PDF 連結（pdfCrowd 匯出）。
+本作業使用 **Claude（Claude Code 桌面版）** 作為 AI 助手。完整對話紀錄：[`docs/chat.pdf`](docs/chat.pdf)（只保留雙方對話文字，略去程式執行過程；貼上的課程頁面已隱藏個人資料）。
+
+| 部分 | AI 協助的內容 | 我做的事 |
+|---|---|---|
+| 題目與資料 | 整理作業要求、建議幾個符合「> 13 個特徵」的 Kaggle 資料集 | 選定 Life Expectancy (WHO)，決定沿用 DIC2 架構開新 repo |
+| 程式 | 撰寫網頁（`index.html`）、Flask 後端（`app.py`）、離線分析（`analysis.py`）、資訊圖表 | 提出功能需求、在瀏覽器實際操作並回報問題（例如點不同 k 圖不會變、版面跟老師範例太像） |
+| 統計方法 | 實作並解釋特徵選擇、95% 信賴/預測區間、五大假設檢定、交叉驗證、Ridge/Lasso、log 轉換 | 決定要加入哪些擴充（五大假設、CV、正則化、模型改善、資訊圖表） |
+| 除錯與核對 | 發現 scikit-learn 在尺度差異過大時算錯（RMSE 6.80 vs 4.07）並修正；以 statsmodels 核對網頁 JS 的檢定數值 | — |
+| 呈現 | 改寫成「先講結論」的白話版、技術細節收進展開區塊、換配色 | 指出內容難抓重點、配色不舒服，選定新配色 |
+| NotebookLM | 提供來源清單與提問範本；核對回答中的數字並加註 | 實際操作 NotebookLM 產生摘要並截圖 |
+| 版本控制 | 只修改工作目錄，不代為 commit | 逐次 review 後自己 commit / push、開啟 GitHub Pages |
+
+**心得**：AI 能很快產出完整程式，但它也會犯錯——過程中 AI 自己發現並更正了幾次過度的結論（例如把差 0.01 的結果說成 overfitting、把高估寫成低估）。所以每個數字都需要用第二種工具交叉核對，結論也要回頭對照實際數據。
 
 ## NotebookLM 摘要
 
