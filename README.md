@@ -271,4 +271,26 @@ python analysis.py     # 重新產生 figures/（需要 matplotlib）
 
 ## NotebookLM 摘要
 
-> TODO（同學自行填寫）：用 NotebookLM 研究網路上同主題（WHO Life Expectancy 線性迴歸）的解法，撰寫 100 字以上摘要。
+用 NotebookLM 研究網路上同主題（WHO Life Expectancy）的解法。來源：本專案網頁、[RPubs 多元迴歸報告](https://rstudio-pubs-static.s3.amazonaws.com/671846_62635c28b95045bb984c75c87fb7d415.html)、[arXiv 2510.00542](https://www.arxiv.org/pdf/2510.00542)、[Stanford Intersect](https://ojs.stanford.edu/ojs/index.php/intersect/article/view/3445)、[iJOE](https://online-journals.org/index.php/i-joe/article/view/33315)（[NYC Data Science](https://nycdatascience.com/blog/student-works/life-expectancy-by-country/) 因網站阻擋未能匯入）。
+
+> 提問：影響各國平均壽命的主要因素有哪些？多元線性迴歸在這個資料集上的表現與限制是什麼？我的分析結果和其他研究有哪些一致或不同之處？
+
+**NotebookLM 回答（原文）**
+
+**影響平均壽命的主要因素**
+各國平均壽命主要受社會經濟與醫療健康兩大面向影響：人類發展指數（HDI/資源收入結構）、受教育年數及 GDP 與壽命呈強正相關；成年人死亡率、HIV/AIDS 感染率與青少年/兒童消瘦率呈顯著負相關；身體質量指數（BMI）及疫苗接種率（如白喉、小兒麻痺）則具正面促進效果。
+
+**多元線性迴歸的表現與限制**
+在測試集上，多元線性迴歸的判定係數 R² 約為 0.73（MAE 3.74、RMSE 4.82），具備運算極快與參數易解釋的優點。然而其主要限制在於無法有效捕捉特徵間的非線性關係與交互作用，且容易受到離群值干擾。此外，真實資料常難以完全符合殘差常態性、同變異性與無多重共線性等統計前提。
+
+**分析結果與其他研究的異同**
+- 一致處：各研究均證實成人死亡率、HIV/AIDS、GDP 及疫苗率為關鍵預測因子，且非線性模型（如隨機森林 R² ≈ 0.94）的預測準確度均顯著超越線性迴歸。
+- 不同處：本專案著重於完整的 CRISP-DM 實驗流程、迴歸前提假設檢定與 Ridge/Lasso 正規化比較；而部分研究在預處理時直接剔除缺值率高於 5% 的欄位（如 GDP 與教育年數），導致特徵重要性排序與涵蓋完整 HDI 變數的研究產生差異。
+
+![NotebookLM 截圖](docs/notebooklm.png)
+
+**我的核對與心得**
+- NotebookLM 寫的 R² 0.73、RMSE 4.82 是**其他研究**的線性迴歸結果；本專案是 R² 0.83、RMSE 4.06 歲（取 log 後 R² 0.86、RMSE 3.62）。差異可能來自缺值處理與特徵選擇方式不同。
+- 「非線性模型更準」：本專案沒有訓練隨機森林，但結果方向一致——RESET 檢定顯示還有非線性，而對偏態特徵取 log（一種非線性轉換）讓誤差降了 11%。
+- 因素方向完全一致：教育、收入組成（HDI 的一部分）為正向；成人死亡率、HIV/AIDS、消瘦率為負向。
+- 本專案保留了缺值多的欄位（用訓練集中位數補值），所以 GDP 與 Schooling 都有進入模型，這是和「直接刪欄位」的研究不同之處。
