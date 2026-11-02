@@ -1,0 +1,29 @@
+{
+  "method": "RFE",
+  "k": 16,
+  "features": [
+    "under-five deaths",
+    "infant deaths",
+    "Schooling",
+    "Adult Mortality",
+    "HIV/AIDS",
+    "Income composition of resources",
+    "Diphtheria",
+    "BMI",
+    "Status_Developing",
+    "Polio",
+    "GDP",
+    "Hepatitis B",
+    "thinness  1-19 years",
+    "Measles",
+    "Alcohol",
+    "Total expenditure"
+  ],
+  "rmse": 4.064160429992175,
+  "r2": 0.8288474299837738,
+  "adj_r2": 0.8240347039376233,
+  "mae": 3.0456782354067506,
+  "pi_coverage": 0.9368600682593856,
+  "n_train": 2342,
+  "n_test": 586
+}

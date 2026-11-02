@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>壽命迴歸資訊圖表 · HW2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; --bg: #0b1120; --card: #111a2e; --line: #24304a; --text: #e2e8f0; --muted: #8b9ab3;
+    --brand: #2dd4bf; --amber: #fbbf24; --red: #fb7185; --violet: #a78bfa; --mono: 'IBM Plex Mono', monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 'Noto Sans TC', system-ui, sans-serif; }
+  .page { max-width: 1000px; margin: 0 auto; padding: 32px 20px 48px; }
+  header { text-align: center; padding: 36px 20px 30px; border-radius: 20px; border: 1px solid var(--line);
+    background: radial-gradient(600px 260px at 50% 0%, rgba(45, 212, 191, .22), transparent 70%), var(--card); }
+  header .eyebrow { font: 600 12px var(--mono); color: var(--amber); letter-spacing: .12em; }
+  header h1 { margin: 10px 0 6px; font-size: 38px; font-weight: 900; line-height: 1.25; }
+  header h1 span { color: var(--brand); }
+  header p { margin: 0; color: var(--muted); }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+  .fact { background: rgba(11, 17, 32, .6); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .fact b { display: block; font: 600 28px var(--mono); color: var(--brand); }
+  .fact small { color: var(--muted); }
+  h2 { font-size: 20px; font-weight: 900; margin: 40px 0 14px; display: flex; align-items: center; gap: 10px; }
+  h2 i { font: 600 12px var(--mono); font-style: normal; color: #042f2e; background: var(--brand); border-radius: 6px; padding: 4px 8px; }
+  .flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .flow div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; position: relative; }
+  .flow div b { display: block; color: var(--brand); font-size: 13px; }
+  .flow div small { color: var(--muted); font-size: 12px; line-height: 1.5; display: block; margin-top: 4px; }
+  .flow div em { font: 600 11px var(--mono); font-style: normal; color: var(--amber); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .card h3 { margin: 0 0 12px; font-size: 15px; }
+  .bars div { display: grid; grid-template-columns: 150px 1fr 54px; align-items: center; gap: 10px; margin: 7px 0; font-size: 13px; }
+  .bars span.t { height: 12px; border-radius: 6px; }
+  .bars span.v { font: 600 13px var(--mono); text-align: right; }
+  .big { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .big div { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: rgba(11, 17, 32, .5); }
+  .big b { display: block; font: 600 30px var(--mono); color: var(--amber); }
+  .big small { color: var(--muted); }
+  .checks div { display: grid; grid-template-columns: 26px 110px 1fr; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .checks div:first-child { border-top: 0; }
+  .checks .st { font-size: 16px; }
+  .checks small { color: var(--muted); }
+  .lesson { border-left: 4px solid var(--amber); background: rgba(251, 191, 36, .06); border-radius: 0 12px 12px 0; padding: 14px 18px; margin-top: 16px; }
+  .lesson b { color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { color: var(--muted); font-weight: 500; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 8px; border-bottom: 1px solid rgba(36, 48, 74, .6); font-family: var(--mono); }
+  td:first-child { font-family: inherit; }
+  footer { margin-top: 36px; color: var(--muted); font-size: 12px; text-align: center; }
+  footer a { color: var(--brand); }
+  @media (max-width: 820px) { .facts, .flow { grid-template-columns: 1fr 1fr; } .two { grid-template-columns: 1fr; } header h1 { font-size: 28px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="eyebrow">HW2 · MULTIPLE LINEAR REGRESSION · CRISP-DM</div>
+    <h1>什麼決定一個國家的<span>平均壽命</span>？</h1>
+    <p>以 WHO 193 國、16 年的健康與經濟指標，用多元線性迴歸找出關鍵因素</p>
+    <div class="facts">
+      <div class="fact"><b>2,938</b><small>筆國家-年份資料</small></div>
+      <div class="fact"><b>193</b><small>個國家</small></div>
+      <div class="fact"><b>2000–15</b><small>年份範圍</small></div>
+      <div class="fact"><b>20</b><small>個候選特徵</small></div>
+    </div>
+  </header>
+
+  <h2><i>FLOW</i>CRISP-DM 六步驟</h2>
+  <div class="flow">
+    <div><em>01</em><b>商業理解</b><small>找出影響壽命的可控因素，協助公衛預算排序</small></div>
+    <div><em>02</em><b>資料理解</b><small>14 個欄位有缺值；教育、收入與壽命高度相關</small></div>
+    <div><em>03</em><b>資料準備</b><small>刪 10 筆缺目標、訓練集中位數補值、One-hot 編碼</small></div>
+    <div><em>04</em><b>建模</b><small>5 種特徵選擇 × k = 1…20，OLS 估計</small></div>
+    <div><em>05</em><b>評估</b><small>RMSE / R²、95% 區間、五大假設、5-fold CV</small></div>
+    <div><em>06</em><b>部署</b><small>GitHub Pages 互動網頁 + Flask API</small></div>
+  </div>
+
+  <h2><i>DATA</i>和壽命最相關的因素</h2>
+  <div class="two">
+    <div class="card">
+      <h3>相關係數 r（與平均壽命）</h3>
+      <div class="bars" id="corrBars"></div>
+    </div>
+    <div class="card">
+      <h3>最佳模型表現（測試集）</h3>
+      <div class="big" id="bigNums"></div>
+      <div class="lesson" style="margin-top:12px" id="parsimony"></div>
+    </div>
+  </div>
+
+  <h2><i>EVAL</i>模型診斷</h2>
+  <div class="two">
+    <div class="card">
+      <h3>迴歸五大假設</h3>
+      <div class="checks" id="checks"></div>
+    </div>
+    <div class="card">
+      <h3>正則化與模型改善</h3>
+      <table id="cmp"></table>
+      <table id="imp" style="margin-top:12px"></table>
+    </div>
+  </div>
+
+  <div class="lesson" id="lessons"></div>
+
+  <footer>
+    資料：<a href="https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who">Kaggle · Life Expectancy (WHO)</a> ·
+    互動網頁：<a href="index.html">index.html</a> · 數據由 analysis.py（scikit-learn + statsmodels）產生
+  </footer>
+</div>
+<script>
+// Pearson r with Life expectancy — from analysis.py (Data Understanding)
+const CORR = [['Schooling', .752], ['Income composition', .725], ['BMI', .568], ['Diphtheria', .479], ['Polio', .466],
+  ['Adult Mortality', -.696], ['HIV/AIDS', -.557], ['thinness 1-19 歲', -.477]];
+document.getElementById('corrBars').innerHTML = CORR.map(([n, r]) =>
+  `<div><span>${n}</span><span class="t" style="width:${Math.abs(r) * 100}%;background:${r > 0 ? 'var(--brand)' : 'var(--red)'}"></span><span class="v">${r > 0 ? '+' : ''}${r.toFixed(2)}</span></div>`).join('');
+
+fetch('figures/advanced.json').then(r => r.json()).then(A => {
+  const B = A.best, a = A.assumptions, f = v => (+v).toFixed(3);
+  document.getElementById('bigNums').innerHTML = [
+    [f(B.rmse).slice(0, 4), `RMSE（歲）· ${B.method} k=${B.k}`], [(+B.r2).toFixed(2), 'R²（解釋 83% 變異）'],
+    ['±8', '95% 預測區間（歲）'], [(B.pi_coverage * 100).toFixed(1) + '%', '實際值落在 PI 內'],
+  ].map(([b, s]) => `<div><b>${b}</b><small>${s}</small></div>`).join('');
+  document.getElementById('parsimony').innerHTML = '<b>精簡就夠用：</b>只用 4 個特徵（Schooling、Adult Mortality、HIV/AIDS、Diphtheria）R² 就有 0.79，再加 12 個特徵 RMSE 只降 0.45 歲。';
+  const row = (ok, name, s) => `<div><span class="st">${ok ? '✅' : '⚠️'}</span><b>${name}</b><small>${s}</small></div>`;
+  document.getElementById('checks').innerHTML = [
+    row(a.linearity_reset_p > .05, '① 線性', `RESET p ${a.linearity_reset_p < 1e-4 ? '< 0.0001' : f(a.linearity_reset_p)}：仍有非線性`),
+    row(a.independence_dw > 1.5 && a.independence_dw < 2.5, '② 獨立', `DW = ${(+a.independence_dw).toFixed(2)}：同國家逐年資料彼此相關`),
+    row(a.homoscedasticity_bp_p > .05, '③ 同變異', `BP p < 0.0001：低壽命國家誤差較大`),
+    row(a.normality_jb_p > .05, '④ 常態', `JB p < 0.0001：峰態 ${(+a.kurtosis).toFixed(1)}，尾巴偏厚`),
+    row(a.max_vif < 10, '⑤ 共線性', `最大 VIF ${(+a.max_vif).toFixed(0)}：infant ↔ under-five deaths`),
+  ].join('');
+  document.getElementById('cmp').innerHTML = '<tr><th>模型</th><th>測試 RMSE</th><th>CV RMSE</th></tr>' +
+    A.model_comparison.map(r => `<tr><td>${r.model}</td><td>${f(r.rmse)}</td><td>${f(r.cv_rmse)}</td></tr>`).join('');
+  document.getElementById('imp').innerHTML = '<tr><th>改善版本</th><th>測試 RMSE</th><th>R²</th></tr>' +
+    A.improvement.map(r => `<tr><td>${r.variant}</td><td>${f(r.rmse)}</td><td>${(+r.r2).toFixed(4)}</td></tr>`).join('');
+  document.getElementById('lessons').innerHTML = `<b>三個收穫：</b>
+    ① 教育與收入是延長壽命最強的正向因素，成人死亡率與 HIV/AIDS 是最強的負向因素。
+    ② 比挑特徵更有效的是處理偏態：對 GDP、Population、HIV/AIDS 等 10 個偏態特徵取 log，RMSE 從 4.07 降到 3.62（−11%）；Ridge / Lasso 則幾乎沒有幫助。
+    ③ 五大假設在大樣本下多半被拒絕，係數方向可信，但標準誤與區間要保守解讀。`;
+});
+</script>
+</body>
+</html>

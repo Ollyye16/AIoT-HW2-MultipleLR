@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>迴歸實驗室 HW2 · Regression Lab</title>
+<meta name="description" content="HW2 多元線性迴歸（CRISP-DM）：Life Expectancy (WHO) / 50 Startups / Boston Housing / 任意 CSV，特徵選擇、五大假設檢定、信賴與預測區間">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='6' cy='17' r='2' fill='%232dd4bf'/><circle cx='11' cy='12' r='2' fill='%232dd4bf'/><circle cx='17' cy='8' r='2' fill='%232dd4bf'/><path d='M3 20L21 4' stroke='%23fbbf24' stroke-width='2'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { color-scheme: dark;
+    --bg: #0b1120; --card: #111a2e; --card2: #0d1526; --line: #24304a; --text: #e2e8f0; --muted: #8b9ab3;
+    --brand: #2dd4bf; --brand2: #0f766e; --soft: rgba(45, 212, 191, .12); --green: #2dd4bf; --greenSoft: rgba(45, 212, 191, .15);
+    --amber: #fbbf24; --amberSoft: rgba(251, 191, 36, .15); --red: #fb7185; --violet: #a78bfa; --mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; font-family: 'Noto Sans TC', system-ui, sans-serif; color: var(--text); font-size: 14px; line-height: 1.6;
+    background: radial-gradient(1200px 600px at 85% -10%, rgba(45, 212, 191, .10), transparent 60%),
+                radial-gradient(900px 500px at -10% 10%, rgba(251, 191, 36, .06), transparent 60%), var(--bg); background-attachment: fixed; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* sticky nav */
+  nav.top { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: rgba(11, 17, 32, .82); border-bottom: 1px solid var(--line); }
+  nav.top .in { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
+  nav.top .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 16px; white-space: nowrap; }
+  nav.top .steps { display: flex; gap: 4px; overflow-x: auto; margin-left: auto; scrollbar-width: none; }
+  nav.top .steps a { color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+  nav.top .steps a b { font: 600 11px var(--mono); margin-right: 4px; opacity: .7; }
+  nav.top .steps a:hover { color: var(--text); }
+  nav.top .steps a.on { color: var(--brand); border-color: rgba(45, 212, 191, .4); background: var(--soft); }
+  .badge { border: 1px solid var(--amber); color: var(--amber); border-radius: 4px; padding: 0 7px; font: 600 11px var(--mono); }
+
+  /* hero */
+  .hero { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; padding: 30px 30px 24px; margin: 24px 0 8px;
+    background: linear-gradient(135deg, rgba(15, 118, 110, .35), rgba(17, 26, 46, .9) 45%), var(--card); }
+  .hero::after { content: ''; position: absolute; right: -80px; top: -80px; width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(251, 191, 36, .18), transparent 65%); pointer-events: none; }
+  .hero .eyebrow { font: 600 12px var(--mono); color: var(--amber); letter-spacing: .08em; }
+  .hero h1 { margin: 6px 0 10px; font-size: 30px; font-weight: 900; line-height: 1.3; }
+  .hero h1 span { color: var(--brand); }
+  .hero p { margin: 0 0 18px; max-width: 820px; line-height: 1.8; color: #cbd5e1; }
+  .hero p b { color: var(--amber); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: rgba(11, 17, 32, .55); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .kpi small { color: var(--muted); font-size: 12px; }
+  .kpi strong { display: block; font: 600 22px var(--mono); color: var(--text); margin-top: 2px; }
+  .kpi strong em { font-style: normal; font-size: 13px; color: var(--muted); }
+  @media (max-width: 760px) { .kpis { grid-template-columns: 1fr 1fr; } .hero h1 { font-size: 24px; } }
+
+  /* phases */
+  .phase { display: flex; gap: 14px; align-items: flex-start; margin: 40px 0 16px; }
+  .phase .no { font: 600 13px var(--mono); color: #042f2e; background: var(--brand); border-radius: 8px; padding: 6px 9px; line-height: 1; margin-top: 4px; }
+  .phase h2 { margin: 0; font-size: 21px; font-weight: 900; }
+  .phase h2 small { font: 500 12px var(--mono); color: var(--muted); margin-left: 8px; }
+  .phase p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
+  .card { background: linear-gradient(180deg, rgba(255, 255, 255, .018), transparent 40%), var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; transition: border-color .2s; }
+  .card:hover { border-color: #2f3d5c; }
+  .card h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h3::before { content: ''; width: 4px; height: 15px; border-radius: 2px; background: var(--brand); }
+  .sub { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  .label { font-size: 12px; font-weight: 700; color: var(--brand); margin: 16px 0 8px; display: flex; gap: 8px; align-items: center; }
+  .label i { font-style: normal; width: 20px; height: 20px; border: 1px solid var(--brand); border-radius: 50%; display: grid; place-items: center; font-size: 11px; }
+  .label:first-child { margin-top: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .grid { display: grid; gap: 16px; }
+  .grid > * { min-width: 0; }
+  #razor { white-space: normal; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); }
+  .gData { grid-template-columns: 260px 1fr 190px auto; align-items: end; }
+  @media (max-width: 900px) { .g2, .g3, .g5, .gData { grid-template-columns: 1fr; } .g4 { grid-template-columns: 1fr 1fr; } }
+  .g2 > .card, .g3 > .card { margin-bottom: 0; }
+  .grid + .card, .grid + .grid, .card + .grid { margin-top: 16px; }
+  .grid { margin-bottom: 16px; }
+  select, input[type=text], input[type=number] { width: 100%; font: inherit; color: var(--text); padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+  select:focus, input:focus { outline: 2px solid var(--brand2); }
+  button.chip { font: inherit; font-weight: 700; font-size: 13px; color: var(--text); padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; transition: all .15s; }
+  button.chip:hover { border-color: var(--brand2); transform: translateY(-1px); }
+  button.chip small { font: 10px var(--mono); color: var(--muted); }
+  button.chip.on { border-color: var(--brand); background: var(--soft); color: var(--brand); }
+  button.chip.on small { color: var(--brand); }
+  button.chip.best { border-color: var(--amber); color: var(--amber); }
+  button.chip.best.on { background: var(--amberSoft); box-shadow: 0 0 0 1px var(--amber); }
+  button.chip.full { border-style: dashed; border-color: var(--red); }
+  button.chip.full.on { background: rgba(251, 113, 133, .12); color: var(--red); }
+  button.primary { font: inherit; font-weight: 700; padding: 8px 20px; border-radius: 8px; border: 0; background: linear-gradient(135deg, #5eead4, var(--brand)); color: #042f2e; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(45, 212, 191, .7); }
+  .stat { position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .stat::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--brand), transparent); }
+  .stat .k { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+  .stat .v { font: 600 24px var(--mono); margin: 6px 0 2px; color: var(--brand); }
+  .stat .d { font-size: 12px; color: var(--muted); }
+  .mini { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .mini small { color: var(--muted); font-size: 12px; } .mini strong { display: block; font: 600 20px var(--mono); }
+  .tag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 4px; background: var(--greenSoft); color: var(--brand); white-space: nowrap; }
+  .tag.amber { background: var(--amberSoft); color: var(--amber); }
+  .tag.red { background: rgba(251, 113, 133, .15); color: var(--red); }
+  .tag.indigo { background: rgba(167, 139, 250, .15); color: #c4b5fd; }
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; }
+  .eq code { display: block; font: 14px var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: nowrap; }
+  .eq code b { color: var(--brand); font-weight: 600; }
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { background: var(--card2); font-size: 12px; font-weight: 500; color: var(--muted); text-align: left; padding: 9px 12px; white-space: nowrap; }
+  td { padding: 9px 12px; border-top: 1px solid var(--line); }
+  tr:hover td { background: rgba(255, 255, 255, .02); }
+  td.mono { font-family: var(--mono); }
+  tr.hl td { background: rgba(251, 191, 36, .06); }
+  .pos { color: var(--brand); font-weight: 600; } .neg { color: var(--red); font-weight: 600; }
+  .steps-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .steps-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+  .steps-list li i { font: 600 12px var(--mono); font-style: normal; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); color: var(--brand); }
+  .steps-list li b { color: var(--text); }
+  .steps-list li span { color: var(--muted); }
+  .predict-box { border: 1px solid var(--brand2); background: radial-gradient(circle at top, rgba(45, 212, 191, .16), transparent 70%); border-radius: 12px; padding: 22px; text-align: center; margin-top: 16px; }
+  .predict-box .v { font: 600 34px var(--mono); color: var(--brand); margin: 6px 0; }
+  .predict-box small { color: var(--muted); }
+  .field { margin-bottom: 14px; }
+  .field .h { display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  .field .h span { color: var(--amber); font-family: var(--mono); font-weight: 400; }
+  input[type=range] { width: 100%; accent-color: var(--brand); margin-top: 6px; }
+  .note { font-size: 12px; color: var(--muted); border-left: 3px solid var(--amber); padding: 8px 12px; background: rgba(251, 191, 36, .05); border-radius: 0 6px 6px 0; margin-top: 12px; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px; }
+  .links a { color: var(--text); text-decoration: none; border: 1px solid var(--line); background: var(--card2); border-radius: 8px; padding: 8px 14px; font-weight: 700; font-size: 13px; }
+  .links a:hover { border-color: var(--brand); color: var(--brand); }
+  .err { color: var(--red); font-weight: 600; }
+  footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 32px; }
+  footer a { color: var(--brand); }
+  canvas { max-height: 300px; }
+  #corrChart, #missChart { max-height: none; }
+</style>
+</head>
+<body>
+<nav class="top"><div class="in">
+  <div class="brand">
+    <svg width="24" height="24" viewBox="0 0 24 24"><circle cx="6" cy="17" r="2" fill="#2dd4bf"/><circle cx="11" cy="12" r="2" fill="#2dd4bf"/><circle cx="17" cy="8" r="2" fill="#2dd4bf"/><path d="M3 20L21 4" stroke="#fbbf24" stroke-width="2"/></svg>
+    <span id="title">迴歸實驗室</span><span class="badge">HW2</span>
+  </div>
+  <div class="steps" id="navSteps">
+    <a href="#p1"><b>01</b>商業理解</a><a href="#p2"><b>02</b>資料理解</a><a href="#p3"><b>03</b>資料準備</a>
+    <a href="#p4"><b>04</b>建模</a><a href="#p5"><b>05</b>評估</a><a href="#p6"><b>06</b>部署</a>
+  </div>
+</div></nav>
+
+<div class="wrap">
+  <!-- 01 Business Understanding -->
+  <section class="hero" id="p1">
+    <div class="eyebrow">CRISP-DM · MULTIPLE LINEAR REGRESSION</div>
+    <h1>多元線性迴歸 × <span>特徵選擇</span></h1>
+    <p id="heroText">載入中…</p>
+    <div class="kpis" id="heroKpis"></div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <div class="label"><i>1</i>選擇問題與資料集</div>
+    <div class="grid gData" style="margin-bottom:0">
+      <div><select id="problem">
+        <option value="life">Life Expectancy (WHO)：預測平均壽命</option>
+        <option value="startup">50 Startups：預測公司利潤</option>
+        <option value="boston">Boston Housing：預測房價</option>
+        <option value="custom">自訂資料集（貼上 CSV 網址）</option>
+      </select></div>
+      <div><input type="text" id="url" placeholder="https://.../data.csv"></div>
+      <div><select id="target" title="目標變數 y"></select></div>
+      <div><button class="primary" id="load">載入並分析</button></div>
+    </div>
+    <p class="sub" id="msg" style="margin:10px 0 0"></p>
+    <div class="note" id="business"></div>
+  </section>
+
+  <!-- 02 Data Understanding -->
+  <div class="phase" id="p2"><span class="no">02</span><div><h2>資料理解<small>Data Understanding</small></h2><p>資料規模、缺值分布，以及每個特徵和目標的相關程度。</p></div></div>
+  <div class="grid g4" id="dataStats"></div>
+  <div class="grid g2">
+    <section class="card"><h3>各特徵與目標的相關係數</h3><p class="sub">Pearson r，依絕對值排序；綠色正相關、粉紅負相關。</p><div id="corrBox" style="position:relative"><canvas id="corrChart"></canvas></div></section>
+    <section class="card"><h3>缺值分布</h3><p class="sub">每個欄位的缺值筆數（只列出有缺值的欄位）。</p><div id="missBox" style="position:relative"><canvas id="missChart"></canvas></div></section>
+  </div>
+
+  <!-- 03 Data Preparation -->
+  <div class="phase" id="p3"><span class="no">03</span><div><h2>資料準備<small>Data Preparation</small></h2><p>所有步驟都只用訓練集的資訊，避免資料洩漏。</p></div></div>
+  <section class="card"><ul class="steps-list" id="prepList"></ul></section>
+
+  <!-- 04 Modeling -->
+  <div class="phase" id="p4"><span class="no">04</span><div><h2>建模<small>Modeling</small></h2><p>5 種特徵選擇方法 × k = 1…p，最終模型都用 OLS 在訓練集上估計。</p></div></div>
+  <section class="card">
+    <div class="label"><i>1</i>特徵選擇方法</div>
+    <div class="row" id="methods"></div>
+    <div class="label" id="kLabel"><i>2</i>特徵數量 k</div>
+    <div class="row" id="ks"></div>
+  </section>
+
+  <div class="grid g5" id="stats"></div>
+
+  <section class="card bar">
+    <div class="row" style="align-items:center" id="active"></div>
+    <span class="tag" id="razor"></span>
+  </section>
+
+  <div class="grid g2">
+    <section class="card"><h3>特徵數 vs 測試集 RMSE</h3><p class="sub">越低越好。<span style="color:#fbbf24">●</span> 最佳 k　<span style="color:#fb7185">◯</span> 目前選擇的 k</p><canvas id="rmseChart"></canvas></section>
+    <section class="card"><h3>特徵數 vs 測試集 R²</h3><p class="sub">越高越好。<span style="color:#fbbf24">●</span> 最佳 k　<span style="color:#fb7185">◯</span> 目前選擇的 k</p><canvas id="r2Chart"></canvas></section>
+  </div>
+
+  <section class="card" id="compareCard" hidden>
+    <h3>五種方法比較</h3><p class="sub">每種方法測試集 RMSE 最低的那一組特徵。</p>
+    <div class="tbl"><table id="compareTbl"></table></div>
+  </section>
+
+  <section class="card eq">
+    <h3>迴歸方程式</h3><p class="sub">以訓練集 OLS 估計。</p>
+    <code id="equation"></code>
+  </section>
+
+  <section class="card">
+    <h3>係數與統計檢定</h3>
+    <p class="sub">估計值、標準誤、t 值、p 值、95% 信賴區間與 VIF（訓練集；VIF &gt; 5 表示共線性偏高）。</p>
+    <div class="tbl"><table id="coefTbl"></table></div>
+  </section>
+
+  <!-- 05 Evaluation -->
+  <div class="phase" id="p5"><span class="no">05</span><div><h2>評估<small>Evaluation</small></h2><p>預測區間、迴歸五大假設、交叉驗證與正則化模型比較、殘差診斷。</p></div></div>
+  <section class="card">
+    <h3>測試集預測圖與 95% 區間</h3>
+    <p class="sub" id="intervalCap">測試樣本依預測值排序。深色帶 = 平均值的 95% 信賴區間（CI），淺色帶 = 單筆新觀測的 95% 預測區間（PI）。</p>
+    <canvas id="intervalChart"></canvas>
+  </section>
+
+  <section class="card">
+    <h3>迴歸五大假設檢定</h3>
+    <p class="sub">針對目前選擇的模型，以訓練集殘差檢定（α = 0.05）。</p>
+    <div class="tbl"><table id="assumpTbl"></table></div>
+    <div class="grid g2" style="margin:16px 0 0">
+      <div><p class="sub" style="margin-bottom:6px">殘差 vs 預測值（線性、同變異）</p><canvas id="residFitChart"></canvas></div>
+      <div><p class="sub" style="margin-bottom:6px">常態 Q-Q 圖（常態性）</p><canvas id="qqChart"></canvas></div>
+    </div>
+    <div class="note">樣本數很大時（例如上千筆），正式檢定對很小的偏離也會顯著，所以要搭配圖形判斷偏離程度。違反假設時，係數的點估計仍然不偏，但標準誤與區間可能不準。</div>
+  </section>
+
+  <section id="advanced" hidden>
+    <div class="grid g2">
+      <section class="card">
+        <h3>OLS vs Ridge vs Lasso</h3>
+        <p class="sub">Ridge / Lasso 的 α 以 5-fold 交叉驗證選擇；CV RMSE 為訓練集 5-fold 平均。</p>
+        <div class="tbl"><table id="modelCmpTbl"></table></div>
+      </section>
+      <section class="card">
+        <h3>交叉驗證：最佳 k 穩不穩？</h3>
+        <p class="sub">訓練集 5-fold CV RMSE（實線）vs 單一測試集 RMSE（虛線）。</p>
+        <canvas id="cvChart"></canvas>
+      </section>
+    </div>
+    <section class="card">
+      <h3>模型改善：log 轉換 + 影響點</h3>
+      <p class="sub" id="improveCap"></p>
+      <div class="tbl"><table id="improveTbl"></table></div>
+    </section>
+    <p class="sub">※ 本區由 <code>analysis.py</code>（scikit-learn + statsmodels）預先計算，只對 Life Expectancy 資料集顯示。</p>
+  </section>
+
+  <section class="card">
+    <h3>測試集殘差與離群值</h3>
+    <p class="sub">依 |殘差| 排序的前 10 筆測試樣本；|殘差| &gt; 1.2 × RMSE 標記為離群。</p>
+    <div class="tbl"><table id="residTbl"></table></div>
+  </section>
+
+  <!-- 06 Deployment -->
+  <div class="phase" id="p6"><span class="no">06</span><div><h2>部署<small>Deployment</small></h2><p>用目前的模型預測新樣本；網站與 API 的使用方式。</p></div></div>
+  <div class="grid g2">
+    <section class="card">
+      <h3>即時預測</h3>
+      <p class="sub">調整輸入值，用目前的模型即時預測（附 95% 預測區間）。</p>
+      <div id="inputs"></div>
+      <div class="predict-box">
+        <small>預測 <span id="predName"></span></small>
+        <div class="v" id="predVal"></div>
+        <small id="predDetail"></small>
+      </div>
+    </section>
+    <section class="card">
+      <h3>部署方式</h3>
+      <ul class="steps-list">
+        <li><i>1</i><div><b>GitHub Pages（靜態網頁）</b><br><span>計算在瀏覽器內以 JavaScript 完成，任何人打開網址就能用。</span></div></li>
+        <li><i>2</i><div><b>Flask API（Python 後端）</b><br><span><code>POST /api/analyze</code>，以 scikit-learn + statsmodels 計算；網頁偵測到後端時自動改用 Python。</span></div></li>
+        <li><i>3</i><div><b>離線分析</b><br><span><code>python analysis.py</code> 產生報告用的圖表與 <code>figures/advanced.json</code>。</span></div></li>
+      </ul>
+      <div class="links" style="margin-top:16px">
+        <a href="infographic.html">📊 一頁式資訊圖表</a>
+        <a href="https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who">📁 Kaggle 資料集</a>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    物聯網應用與資料分析 HW2 · 計算：Flask + scikit-learn + statsmodels（後端），連不到後端時改用瀏覽器內 JavaScript · 圖表：Chart.js<br>
+    資料：<a href="https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who">Life Expectancy (WHO), Kaggle</a>、<a href="https://github.com/Avik-Jain/100-Days-Of-ML-Code">50 Startups</a>、<a href="https://github.com/selva86/datasets">Boston Housing</a>
+  </footer>
+</div>
+
+<script>
+// ---------- presets ----------
+const PRESETS = {
+  life:    { name: 'Life Expectancy (WHO)', url: 'data/Life_Expectancy_Data.csv', target: 'Life expectancy', money: false, item: '國家年',
+             source: 'https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who',
+             business: '<b>商業理解：</b>WHO 與各國政府需要知道哪些可控因素（疫苗接種、教育、醫療支出、疾病防治）最能影響國民平均壽命，才能決定公衛預算的優先順序。目標是用各國每年的健康、經濟與社會指標預測當年的平均壽命（歲），成功標準為測試集 R² > 0.8，且係數方向可以合理解釋。資料來源：<a href="https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who" style="color:var(--brand)">Kaggle · kumarajarshi/life-expectancy-who</a>。' },
+  startup: { name: '50 Startups', url: 'https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/50_Startups.csv',
+             target: 'Profit', money: true, item: '公司',
+             // ponytail: hardcoded = sklearn train_test_split(test_size=0.2, random_state=0); only valid for this exact CSV
+             testIdx: [28, 11, 10, 41, 2, 27, 38, 31, 22, 4],
+             business: '<b>商業理解：</b>創投評估新創公司時，想知道研發、行政、行銷支出與所在州別如何影響利潤，作為投資判斷依據。' },
+  boston:  { name: 'Boston Housing', url: 'https://raw.githubusercontent.com/selva86/datasets/master/BostonHousing.csv',
+             target: 'medv', money: false, item: '房屋',
+             business: '<b>商業理解：</b>以社區犯罪率、房間數、學區師生比等 13 項指標估計波士頓地區房價中位數（千美元），協助估價與投資決策。' },
+  custom:  { name: '自訂資料集', url: '', target: null, money: false, item: '樣本',
+             business: '<b>自訂資料集：</b>貼上任何公開 CSV 網址，系統會自動辨識數值與類別欄位、處理缺值，並以最後一個數值欄位作為預設目標 y。' },
+};
+const METHODS = [
+  { id: 'lasso', name: 'Lasso', tag: 'L1 路徑' },
+  { id: 'forward', name: 'Forward SFS', tag: '向前逐步' },
+  { id: 'rfe', name: 'RFE', tag: '遞迴消除' },
+  { id: 'enet', name: 'ElasticNet', tag: 'L1+L2' },
+  { id: 'exhaustive', name: 'Exhaustive', tag: '窮舉子集' },
+];
+const COLORS = ['#2dd4bf', '#a78bfa', '#38bdf8', '#f472b6', '#a3e635'];
+Chart.defaults.color = '#8b9ab3';
+Chart.defaults.borderColor = '#24304a';
+Chart.defaults.font.family = "'Noto Sans TC', system-ui, sans-serif";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const sum = a => a.reduce((s, v) => s + v, 0);
+
+let ADV = null, PREP = {}, P, D, feats, Xtr, ytr, Xte, yte, teIdx, G, c, results, state = { method: 'lasso', k: null }, charts = {};
+
+// ---------- csv ----------
+// ponytail: naive CSV split — no commas inside quoted fields; swap in PapaParse if a dataset needs it
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  const clean = s => s.trim().replace(/^"|"$/g, '');
+  const header = lines[0].split(',').map(clean);
+  const rows = lines.slice(1).map(l => l.split(',').map(clean)).filter(r => r.length === header.length);
+  // numeric = every non-empty cell is a number (empty cells are missing values, imputed later)
+  const numeric = header.map((_, j) => rows.some(r => r[j] !== '') && rows.every(r => r[j] === '' || !isNaN(+r[j])));
+  return { header, rows, numeric };
+}
+
+// ---------- linear algebra & stats ----------
+function inv(M) {
+  const n = M.length, A = M.map((r, i) => [...r, ...r.map((_, j) => +(i === j))]);
+  for (let col = 0; col < n; col++) {
+    let m = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[m][col])) m = r;
+    if (Math.abs(A[m][col]) < 1e-9 * Math.max(1, Math.abs(M[col][col]))) return null; // singular / collinear
+    [A[col], A[m]] = [A[m], A[col]];
+    const p = A[col][col];
+    for (let k = 0; k < 2 * n; k++) A[col][k] /= p;
+    for (let r = 0; r < n; r++) if (r !== col && A[r][col]) {
+      const f = A[r][col];
+      for (let k = 0; k < 2 * n; k++) A[r][k] -= f * A[col][k];
+    }
+  }
+  return A.map(r => r.slice(n));
+}
+function gram(X, y) {
+  const p = X[0].length, G = Array.from({ length: p }, () => Array(p).fill(0)), c = Array(p).fill(0);
+  X.forEach((r, i) => { for (let a = 0; a < p; a++) { c[a] += r[a] * y[i]; for (let b = a; b < p; b++) G[a][b] += r[a] * r[b]; } });
+  for (let a = 0; a < p; a++) for (let b = 0; b < a; b++) G[a][b] = G[b][a];
+  return { G, c };
+}
+function solveSub(G, c, S) {
+  // Jacobi scaling (unit diagonal) before inverting, so features on very different scales
+  // (e.g. Population ~1e8 vs ratios ~0.5) are not mistaken for collinear
+  const d = S.map(a => Math.sqrt(G[a][a]) || 1);
+  const iS = inv(S.map((a, i) => S.map((b, j) => G[a][b] / (d[i] * d[j]))));
+  if (!iS) return null;
+  const iM = iS.map((row, i) => row.map((v, j) => v / (d[i] * d[j])));
+  return { iM, b: iM.map(row => sum(row.map((v, j) => v * c[S[j]]))) };
+}
+function lgamma(x) {
+  const k = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  let y = x, t = x + 5.5, s = 1.000000000190015;
+  t -= (x + 0.5) * Math.log(t);
+  for (const v of k) s += v / ++y;
+  return -t + Math.log(2.5066282746310005 * s / x);
+}
+function betacf(a, b, x) {
+  const T = 1e-300, fix = v => Math.abs(v) < T ? T : v;
+  let c = 1, d = 1 / fix(1 - (a + b) * x / (a + 1)), h = d;
+  for (let m = 1; m <= 300; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((a - 1 + m2) * (a + m2));
+    d = 1 / fix(1 + aa * d); c = fix(1 + aa / c); h *= d * c;
+    aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + 1 + m2));
+    d = 1 / fix(1 + aa * d); c = fix(1 + aa / c);
+    const del = d * c; h *= del;
+    if (Math.abs(del - 1) < 3e-14) break;
+  }
+  return h;
+}
+function ibeta(a, b, x) {
+  if (x <= 0) return 0; if (x >= 1) return 1;
+  const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b;
+}
+const tPval = (t, df) => ibeta(df / 2, 0.5, df / (df + t * t));            // two-sided
+const fPval = (F, d1, d2) => ibeta(d2 / 2, d1 / 2, d2 / (d2 + d1 * F));
+function tCrit(df) { let lo = 0, hi = 100; for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; tPval(m, df) > 0.05 ? lo = m : hi = m; } return lo; }
+
+// chi-square survival function via the regularized upper incomplete gamma Q(a, x)
+function gammaQ(a, x) {
+  if (x <= 0) return 1;
+  const front = Math.exp(-x + a * Math.log(x) - lgamma(a));
+  if (x < a + 1) { // series
+    let ap = a, del = 1 / a, tot = del;
+    for (let i = 0; i < 1000 && Math.abs(del) > Math.abs(tot) * 1e-15; i++) { ap++; del *= x / ap; tot += del; }
+    return Math.max(0, 1 - tot * front);
+  }
+  let b = x + 1 - a, cc = 1e300, d = 1 / b, h = d; // continued fraction
+  for (let i = 1; i < 1000; i++) {
+    const an = -i * (i - a); b += 2;
+    d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+    cc = b + an / cc; if (Math.abs(cc) < 1e-300) cc = 1e-300;
+    d = 1 / d; const del = d * cc; h *= del;
+    if (Math.abs(del - 1) < 1e-15) break;
+  }
+  return front * h;
+}
+const chi2sf = (x, k) => gammaQ(k / 2, x / 2);
+// inverse standard normal CDF (Acklam's rational approximation, |error| < 1.2e-9) — for the Q-Q plot
+function normInv(p) {
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+  const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+  const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+  const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  if (p > 0.5) return -normInv(1 - p);
+  if (p < 0.02425) {
+    const q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+  }
+  const q = p - 0.5, r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+
+// ---------- feature selection ----------
+function standardize(X, y) { // X without intercept column
+  const p = X[0].length, n = X.length;
+  const mu = [...Array(p).keys()].map(j => sum(X.map(r => r[j])) / n);
+  const sd = mu.map((m, j) => Math.sqrt(sum(X.map(r => (r[j] - m) ** 2)) / n) || 1);
+  const my = sum(y) / n, sy = Math.sqrt(sum(y.map(v => (v - my) ** 2)) / n) || 1;
+  return { Z: X.map(r => r.map((v, j) => (v - mu[j]) / sd[j])), yz: y.map(v => (v - my) / sy) };
+}
+// Lasso (alpha=1) / ElasticNet (alpha=.5) via coordinate descent; rank = order of entry along the λ path
+function pathOrder(Z, yz, alpha) {
+  // covariance updates: Z'r/n = Z'y/n − (Z'Z/n)·b, so each sweep costs O(p²) instead of O(n·p)
+  const n = Z.length, p = Z[0].length, b = Array(p).fill(0), { G: Gz, c: cz } = gram(Z, yz);
+  Gz.forEach(row => row.forEach((_, k) => row[k] /= n)); cz.forEach((_, j) => cz[j] /= n);
+  const lmax = Math.max(...cz.map(Math.abs)) / alpha;
+  const enter = Array(p).fill(Infinity), mag = Array(p).fill(0);
+  for (let s = 0; s < 100; s++) {
+    const lam = lmax * Math.pow(1e-4, s / 99);
+    for (let it = 0; it < 100; it++) {
+      let maxd = 0;
+      for (let j = 0; j < p; j++) {
+        let zr = cz[j];
+        for (let k = 0; k < p; k++) zr -= Gz[j][k] * b[k];
+        const rho = zr + b[j];
+        const nb = Math.sign(rho) * Math.max(Math.abs(rho) - lam * alpha, 0) / (1 + lam * (1 - alpha));
+        const d = nb - b[j];
+        if (d) { b[j] = nb; maxd = Math.max(maxd, Math.abs(d)); }
+      }
+      if (maxd < 1e-7) break;
+    }
+    b.forEach((v, j) => { if (v && enter[j] === Infinity) { enter[j] = s; mag[j] = Math.abs(v); } });
+  }
+  return [...Array(p).keys()].sort((i, j) => enter[i] - enter[j] || mag[j] - mag[i]);
+}
+function rfeOrder(Z, yz) {
+  const { G: Gz, c: cz } = gram(Z, yz);
+  Gz.forEach((r, i) => r[i] += 1e-9); // tiny ridge so collinear columns still rank
+  let S = [...Array(Z[0].length).keys()]; const out = [];
+  while (S.length) {
+    const b = solveSub(Gz, cz, S).b, i = b.reduce((m, v, j) => Math.abs(v) < Math.abs(b[m]) ? j : m, 0);
+    out.unshift(S.splice(i, 1)[0]);
+  }
+  return out;
+}
+const sseOf = F => { const S = [0, ...F.map(j => j + 1)], s = solveSub(G, c, S); return s ? sum(ytr.map(v => v * v)) - sum(s.b.map((v, i) => v * c[S[i]])) : Infinity; };
+function forwardOrder(p) {
+  const out = [], left = [...Array(p).keys()];
+  while (left.length) {
+    const i = left.reduce((m, j, ii) => sseOf([...out, j]) < sseOf([...out, left[m]]) ? ii : m, 0);
+    out.push(left.splice(i, 1)[0]);
+  }
+  return out;
+}
+function exhaustiveSubsets(p) {
+  if (p > 15) return null; // ponytail: 2^p blowup; falls back to forward SFS above 15 features
+  const best = Array(p + 1).fill(null).map(() => ({ sse: Infinity, F: null }));
+  for (let m = 1; m < 1 << p; m++) {
+    const F = [...Array(p).keys()].filter(j => m >> j & 1), e = sseOf(F);
+    if (e < best[F.length].sse) best[F.length] = { sse: e, F };
+  }
+  return best.slice(1).map(b => b.F);
+}
+
+// ---------- model evaluation ----------
+function evaluate(F) {
+  const S = [0, ...F.map(j => j + 1)], sol = solveSub(G, c, S);
+  if (!sol) return null;
+  const { b, iM } = sol, pred = X => X.map(r => sum(S.map((a, i) => r[a] * b[i])));
+  const yhTr = pred(Xtr), yhTe = pred(Xte), n = ytr.length, k = F.length, df = n - k - 1;
+  const mTr = sum(ytr) / n, sse = sum(ytr.map((v, i) => (v - yhTr[i]) ** 2)), sst = sum(ytr.map(v => (v - mTr) ** 2));
+  const sigma2 = sse / df, fstat = ((sst - sse) / k) / sigma2;
+  const nt = yte.length, mTe = sum(yte) / nt, res = yte.map((v, i) => v - yhTe[i]);
+  const r2 = 1 - sum(res.map(v => v * v)) / sum(yte.map(v => (v - mTe) ** 2));
+  const se = b.map((_, i) => Math.sqrt(sigma2 * iM[i][i])), t = b.map((v, i) => v / se[i]), tc = tCrit(df);
+  // 95% intervals: h = x0' (X'X)^-1 x0 ; CI = ŷ ± t·√(σ²h) (mean response), PI = ŷ ± t·√(σ²(1+h)) (new observation)
+  const h = Xte.map(r => sum(S.map((a, i) => r[a] * sum(S.map((b2, j) => iM[i][j] * r[b2])))));
+  const ci = h.map(v => tc * Math.sqrt(sigma2 * v)), pi = h.map(v => tc * Math.sqrt(sigma2 * (1 + v)));
+  return {
+    F, b, se, t, p: t.map(v => tPval(Math.abs(v), df)), lo: b.map((v, i) => v - tc * se[i]), hi: b.map((v, i) => v + tc * se[i]),
+    vif: vif(F), yhTe, df, fstat, fp: fPval(fstat, k, df),
+    ciLo: yhTe.map((v, i) => v - ci[i]), ciHi: yhTe.map((v, i) => v + ci[i]), piLo: yhTe.map((v, i) => v - pi[i]), piHi: yhTe.map((v, i) => v + pi[i]),
+    rmse: Math.sqrt(sum(res.map(v => v * v)) / nt), r2, mae: sum(res.map(Math.abs)) / nt,
+    adj: nt - k - 1 > 0 ? 1 - (1 - r2) * (nt - 1) / (nt - k - 1) : NaN,
+  };
+}
+function vif(F) {
+  if (F.length === 1) return [1];
+  // correlation matrix straight from the training Gram matrix G (row/col 0 = intercept): O(k²), no data pass
+  const n = G[0][0], mu = j => G[0][j + 1] / n, cov = (a, b) => G[a + 1][b + 1] / n - mu(a) * mu(b);
+  const R = F.map(a => F.map(b => cov(a, b) / Math.sqrt(cov(a, a) * cov(b, b)))), iR = inv(R);
+  return iR ? iR.map((r, i) => r[i]) : F.map(() => Infinity);
+}
+
+// Five OLS assumptions on the TRAINING residuals of model M (works for JS and Python results alike)
+function diagnose(M) {
+  if (M._diag) return M._diag;
+  const S = [0, ...M.F.map(j => j + 1)], n = ytr.length, k = M.F.length, df = n - k - 1;
+  const { iM } = solveSub(G, c, S);
+  const fit = Xtr.map(r => sum(S.map((a, i) => r[a] * M.b[i]))), e = ytr.map((v, i) => v - fit[i]);
+  const sse = sum(e.map(v => v * v)), sigma2 = sse / df;
+  // ② independence: Durbin-Watson (rows are in file order = country, then year)
+  let dwn = 0; for (let i = 1; i < n; i++) dwn += (e[i] - e[i - 1]) ** 2;
+  // ④ normality: Jarque-Bera (chi² with 2 df -> p = exp(-JB/2))
+  const m2 = sse / n, skew = sum(e.map(v => v ** 3)) / n / m2 ** 1.5, kurt = sum(e.map(v => v ** 4)) / n / m2 ** 2;
+  const jb = n / 6 * (skew ** 2 + (kurt - 3) ** 2 / 4);
+  // ③ homoscedasticity: Breusch-Pagan (Koenker) LM = n·R² of e² regressed on the model's X
+  const e2 = e.map(v => v * v), c2 = Array(G.length).fill(0);
+  S.forEach(a => c2[a] = sum(Xtr.map((r, i) => r[a] * e2[i])));
+  const ab = solveSub(G, c2, S).b, m2e = sum(e2) / n;
+  const r2aux = 1 - sum(Xtr.map((r, i) => (e2[i] - sum(S.map((a, j) => r[a] * ab[j]))) ** 2)) / sum(e2.map(v => (v - m2e) ** 2));
+  const bp = n * r2aux;
+  // ① linearity: Ramsey RESET — t-test on an added ŷ² term (standardized to keep the matrix well scaled)
+  const mf = sum(fit) / n, sf = Math.sqrt(sum(fit.map(v => (v - mf) ** 2)) / n) || 1, z = fit.map(v => ((v - mf) / sf) ** 2);
+  const q = S.length, GA = S.map(a => [...S.map(b2 => G[a][b2]), sum(Xtr.map((r, i) => r[a] * z[i]))]);
+  GA.push([...GA.map(row => row[q]), sum(z.map(v => v * v))]);
+  const cA = [...S.map(a => c[a]), sum(z.map((v, i) => v * ytr[i]))], idA = [...Array(q + 1).keys()];
+  const solA = solveSub(GA, cA, idA);
+  let resetP = NaN;
+  if (solA) {
+    const sseA = sum(Xtr.map((r, i) => (ytr[i] - sum(S.map((a, j) => r[a] * solA.b[j])) - z[i] * solA.b[q]) ** 2));
+    const tA = solA.b[q] / Math.sqrt(sseA / (n - q - 1) * solA.iM[q][q]);
+    resetP = tPval(Math.abs(tA), n - q - 1);
+  }
+  return M._diag = { S, iM, sigma2, df, fit, e, dw: dwn / sse, skew, kurt, jb, jbp: Math.exp(-jb / 2), bp, bpp: chi2sf(bp, k),
+    resetP, maxVif: Math.max(...M.vif) };
+}
+
+// ---------- pipeline ----------
+async function load() {
+  const key = $('problem').value, url = $('url').value.trim();
+  P = { ...PRESETS[key], url, key };
+  $('msg').className = 'sub'; $('msg').textContent = '讀取資料中…';
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    D = parseCSV(await res.text());
+    D.all = D.rows;
+    if (D.rows.length < 10) throw new Error('至少需要 10 筆資料');
+    const numIdx = D.header.map((_, j) => j).filter(j => D.numeric[j]);
+    if (!numIdx.length) throw new Error('找不到數值欄位當 target');
+    const want = D.header.indexOf(P.target);
+    const t = numIdx.includes(want) ? want : numIdx.at(-1);
+    $('target').innerHTML = numIdx.map(j => `<option value="${j}" ${j === t ? 'selected' : ''}>目標 y：${esc(D.header[j])}</option>`).join('');
+    if (key === 'life' && !ADV) fetch('figures/advanced.json').then(r => r.ok ? r.json() : null).then(j => { ADV = j; if (results) render(); }).catch(() => {});
+    run();
+  } catch (e) { $('msg').className = 'err'; $('msg').textContent = '載入失敗: ' + e.message; }
+}
+
+async function run() {
+  const t = +$('target').value, skipped = [];
+  D.rows = D.all.filter(r => r[t] !== '' && !isNaN(+r[t])); // drop rows with missing target
+  feats = [];
+  D.header.forEach((h, j) => {
+    if (j === t) return;
+    if (D.numeric[j]) return feats.push({ name: h, src: j, f: r => r[j] === '' ? NaN : +r[j] });
+    const levels = [...new Set(D.rows.map(r => r[j]))].filter(v => v !== '').sort();
+    if (levels.length > 20 || levels.length < 2) return skipped.push(h); // ID-like / constant text column
+    // first level = reference (avoids dummy trap)
+    levels.slice(1).forEach(l => feats.push({ name: `${h}_${l}`, src: j, level: l, f: r => +(r[j] === l) }));
+  });
+  if (!feats.length) { $('msg').className = 'err'; $('msg').textContent = '沒有可用的特徵欄位'; return; }
+
+  const n = D.rows.length, idx = [...Array(n).keys()];
+  let test;
+  if (P.testIdx && P.url === PRESETS.startup.url && n === 50) test = new Set(P.testIdx);
+  else { // ponytail: seeded shuffle, 80/20 split
+    let seed = 42; const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    test = new Set(idx.slice(0, Math.max(2, Math.round(n * 0.2))));
+  }
+  const toX = r => [1, ...feats.map(f => f.f(r))];
+  const tr = D.rows.filter((_, i) => !test.has(i)), te = D.rows.filter((_, i) => test.has(i));
+  teIdx = [...Array(n).keys()].filter(i => test.has(i));
+  Xtr = tr.map(toX); ytr = tr.map(r => +r[t]); Xte = te.map(toX); yte = te.map(r => +r[t]);
+  // Data preparation: impute missing values with the TRAINING median (no test-set leakage)
+  let nMissing = 0;
+  for (let j = 1; j <= feats.length; j++) {
+    const v = Xtr.map(r => r[j]).filter(Number.isFinite).sort((a, b) => a - b), h = v.length >> 1;
+    const med = v.length ? (v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2) : 0;
+    for (const r of [...Xtr, ...Xte]) if (!Number.isFinite(r[j])) { r[j] = med; nMissing++; }
+  }
+  ({ G, c } = gram(Xtr, ytr));
+
+  const p = feats.length;
+  $('msg').className = 'sub'; $('msg').textContent = '模型計算中…';
+  const lists = await analyzeWithPython(t) || analyzeInBrowser();
+  results = {};
+  for (const m of METHODS) {
+    const list = lists[m.id];
+    results[m.id] = { list, best: list.reduce((a, b) => b.rmse < a.rmse ? b : a) };
+  }
+  $('title').textContent = `迴歸實驗室 · ${P.name}`;
+  $('msg').innerHTML = `✓ ${n} 筆資料 · ${p} 個候選特徵 · 訓練 ${tr.length} / 測試 ${te.length} · 計算引擎：` +
+    (lists.python ? '<span class="tag amber">🐍 Python（Flask + scikit-learn + statsmodels）</span>' : '<span class="tag indigo">JavaScript（瀏覽器內）</span>') +
+    (D.all.length > n ? ` · 刪除缺目標值 ${D.all.length - n} 筆` : '') +
+    (nMissing ? ` · 以訓練集中位數補值 ${nMissing} 格` : '') +
+    (skipped.length ? ` · 略過文字欄位: ${esc(skipped.join(', '))}` : '') +
+    (p > 15 ? ' · Exhaustive 改用 Forward (特徵 > 15)' : '');
+  PREP = { n, dropped: D.all.length - n, nMissing, skipped, ntr: tr.length, nte: te.length, p, t,
+    encoded: feats.filter(f => f.level).map(f => f.name), python: !!lists.python };
+  renderData();
+  state.k = null;
+  render();
+}
+
+// ---------- data understanding & preparation (independent of the selected model) ----------
+function renderData() {
+  const t = PREP.t, yName = D.header[t], all = D.all;
+  const cells = all.length * (D.header.length), miss = D.header.map((_, j) => all.filter(r => r[j] === '').length);
+  const yv = D.rows.map(r => +r[t]), my = sum(yv) / yv.length, sy = Math.sqrt(sum(yv.map(v => (v - my) ** 2)) / (yv.length - 1));
+  $('dataStats').innerHTML = [
+    ['樣本數', all.length.toLocaleString(), `欄位 ${D.header.length} 個`],
+    ['候選特徵', PREP.p, `數值 ${D.header.filter((_, j) => D.numeric[j] && j !== t).length} · 類別編碼 ${PREP.encoded.length}`],
+    ['缺值格數', sum(miss).toLocaleString(), `占全部 ${(sum(miss) / cells * 100).toFixed(1)}%`],
+    [`目標 ${esc(yName)}`, my.toFixed(2), `標準差 ${sy.toFixed(2)} · 範圍 ${Math.min(...yv)} ~ ${Math.max(...yv)}`],
+  ].map(([a, b, d]) => `<div class="mini"><small>${a}</small><strong>${b}</strong><small>${d}</small></div>`).join('');
+
+  const corr = D.header.map((h, j) => {
+    if (j === t || !D.numeric[j]) return null;
+    const pr = D.rows.filter(r => r[j] !== '').map(r => [+r[j], +r[t]]);
+    const mx = sum(pr.map(q => q[0])) / pr.length, mY = sum(pr.map(q => q[1])) / pr.length;
+    const sxy = sum(pr.map(q => (q[0] - mx) * (q[1] - mY))), sxx = sum(pr.map(q => (q[0] - mx) ** 2)), syy = sum(pr.map(q => (q[1] - mY) ** 2));
+    return { h, r: sxy / Math.sqrt(sxx * syy) };
+  }).filter(o => o && Number.isFinite(o.r)).sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 25);
+  charts.corrChart?.destroy();
+  $('corrBox').style.height = Math.max(220, corr.length * 22) + 'px';
+  charts.corrChart = new Chart($('corrChart'), {
+    type: 'bar', data: { labels: corr.map(o => o.h), datasets: [{ data: corr.map(o => o.r), backgroundColor: corr.map(o => o.r > 0 ? '#2dd4bf' : '#fb7185'), borderRadius: 3 }] },
+    options: { indexAxis: 'y', animation: false, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { min: -1, max: 1 }, y: { ticks: { autoSkip: false } } } },
+  });
+
+  const mlist = D.header.map((h, j) => ({ h, m: miss[j] })).filter(o => o.m).sort((a, b) => b.m - a.m);
+  charts.missChart?.destroy();
+  $('missBox').style.height = Math.max(220, mlist.length * 24) + 'px';
+  charts.missChart = new Chart($('missChart'), {
+    type: 'bar', data: { labels: mlist.length ? mlist.map(o => o.h) : ['（沒有缺值）'], datasets: [{ data: mlist.map(o => o.m), backgroundColor: '#fbbf24', borderRadius: 3 }] },
+    options: { indexAxis: 'y', animation: false, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+  });
+
+  const startupSplit = P.testIdx && P.url === PRESETS.startup.url;
+  $('prepList').innerHTML = [
+    ['欄名清理', '去除欄名與儲存格前後空白（例如 "Life expectancy " → "Life expectancy"）。'],
+    ['刪除目標缺值', PREP.dropped ? `目標 ${esc(yName)} 缺值的 ${PREP.dropped} 筆無法用來訓練，直接刪除，剩 ${PREP.n} 筆。` : '目標變數沒有缺值。'],
+    ['切分訓練 / 測試集', startupSplit ? `沿用 sklearn train_test_split(test_size=0.2, random_state=0)：訓練 ${PREP.ntr} / 測試 ${PREP.nte}。`
+      : `固定亂數種子 42 隨機切 80 / 20：訓練 ${PREP.ntr} 筆、測試 ${PREP.nte} 筆。`],
+    ['缺值補值', PREP.nMissing ? `${PREP.nMissing} 格缺值用<b>訓練集中位數</b>補上（測試集也用訓練集的中位數，避免資料洩漏）。` : '特徵沒有缺值。'],
+    ['類別編碼', (PREP.encoded.length ? `One-hot 編碼並刪除第一個類別當基準（避免虛擬變數陷阱）：${PREP.encoded.map(esc).join('、')}。` : '沒有類別特徵。') +
+      (PREP.skipped.length ? ` 類別數過多或只有一種值的欄位不使用：${PREP.skipped.map(esc).join('、')}。` : '')],
+    ['標準化', 'Lasso / ElasticNet / RFE 排序特徵時先做 z-score 標準化；最終 OLS 用原始單位，係數才能直接解釋。'],
+  ].map(([a, b], i) => `<li><i>${i + 1}</i><div><b>${a}</b><br><span>${b}</span></div></li>`).join('');
+}
+
+// Flask backend (app.py): same origin when served by Flask/Vercel; on GitHub Pages use VERCEL_API if set
+const VERCEL_API = ''; // set after deploying to Vercel, e.g. 'https://your-app.vercel.app/api/analyze'
+const API_URL = location.protocol.startsWith('http') && !location.hostname.endsWith('github.io') ? '/api/analyze' : VERCEL_API;
+async function analyzeWithPython(t) {
+  if (!API_URL) return null;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(60000),
+      body: JSON.stringify({ url: new URL(P.url, location.href).href, target: t, test_idx: teIdx }),
+    });
+    const J = await res.json();
+    // backend must have encoded the exact same features, otherwise fall back
+    if (!res.ok || J.features.join('|') !== feats.map(f => f.name).join('|')) return null;
+    return { ...J.results, python: true };
+  } catch { return null; }
+}
+function analyzeInBrowser() {
+  const p = feats.length, { Z, yz } = standardize(Xtr.map(r => r.slice(1)), ytr);
+  const prefixes = order => order.map((_, k) => order.slice(0, k + 1));
+  const fwd = forwardOrder(p);
+  const subsets = {
+    lasso: prefixes(pathOrder(Z, yz, 1)), enet: prefixes(pathOrder(Z, yz, 0.5)),
+    forward: prefixes(fwd), rfe: prefixes(rfeOrder(Z, yz)), exhaustive: exhaustiveSubsets(p) || prefixes(fwd),
+  };
+  return Object.fromEntries(METHODS.map(m => [m.id, subsets[m.id].map(F => evaluate(F)).filter(Boolean).map(r => ({ k: r.F.length, ...r }))]));
+}
+
+// ---------- rendering ----------
+const fmt = (v, d = 2) => !isFinite(v) ? '—' : P.money
+  ? (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })
+  : v.toLocaleString('en-US', { maximumFractionDigits: 4 });
+const fmtP = p => p < 1e-4 ? '< 0.0001' : p.toFixed(4);
+
+function current() {
+  if (state.method === 'all') {
+    return Object.values(results).map(r => r.best).reduce((a, b) => b.rmse < a.rmse ? b : a);
+  }
+  const R = results[state.method];
+  return R.list.find(r => r.k === state.k) || R.best;
+}
+
+function render() {
+  const yName = D.header[+$('target').value];
+  // method buttons
+  $('methods').innerHTML = METHODS.map(m =>
+    `<button class="chip ${state.method === m.id ? 'on' : ''}" data-m="${m.id}">${m.name} <small>${m.tag}</small></button>`).join('') +
+    `<button class="chip ${state.method === 'all' ? 'on' : ''}" data-m="all">五種方法一起比較</button>`;
+  $('methods').querySelectorAll('button').forEach(b => b.onclick = () => { state.method = b.dataset.m; state.k = null; render(); });
+
+  // k buttons
+  const all = state.method === 'all', R = all ? null : results[state.method];
+  if (!all && state.k == null) state.k = R.best.k;
+  $('kLabel').hidden = $('ks').hidden = all;
+  if (!all) {
+    const p = feats.length;
+    $('kLabel').innerHTML = `<i>2</i>特徵數量 k（1 ~ ${p}）`;
+    $('ks').innerHTML = R.list.map(r => {
+      const best = r === R.best, full = r.k === p;
+      const hint = best ? '★ 最佳 <small>RMSE 最低</small>' : full ? '全部特徵' : r.k === 1 ? `<small>${esc(feats[r.F[0]].name)}</small>` : '';
+      return `<button class="chip ${best ? 'best' : ''} ${full && !best ? 'full' : ''} ${state.k === r.k ? 'on' : ''}" data-k="${r.k}">k = ${r.k} ${hint}</button>`;
+    }).join('');
+    $('ks').querySelectorAll('button').forEach(b => b.onclick = () => { state.k = +b.dataset.k; render(); });
+  }
+
+  const M = current(), k = M.F.length;
+  const globalBest = Object.values(results).map(r => r.best).reduce((a, b) => b.rmse < a.rmse ? b : a);
+  const full = results.lasso.list.find(r => r.k === feats.length);
+
+  // hero
+  $('heroText').innerHTML = `用 Lasso、Forward SFS、RFE、ElasticNet、Exhaustive 五種方法，在 <b>${esc(P.name)}</b> 資料集上挑選特徵來預測
+    <b>${esc(yName)}</b>，比較 k = 1 ~ ${feats.length} 個特徵時的測試集誤差。結果：<b>${globalBest.k} 個特徵</b>時誤差最低${!full || full === globalBest ? '' : full.rmse > globalBest.rmse * 1.02 ? `，全部 ${feats.length} 個特徵反而變差（overfitting）` : `；全部 ${feats.length} 個特徵的誤差幾乎一樣（${fmt(full.rmse)}），用較少特徵就能達到相同效果`}。`;
+  const gbMethod = METHODS.find(m => results[m.id].best === globalBest)?.name || '';
+  const cover = yte.filter((v, i) => v >= globalBest.piLo[i] && v <= globalBest.piHi[i]).length / yte.length;
+  $('heroKpis').innerHTML = [
+    ['最佳測試 RMSE', fmt(globalBest.rmse), `${gbMethod}`],
+    ['測試集 R²', globalBest.r2.toFixed(4), ''],
+    ['選用特徵', `${globalBest.k} <em>/ ${feats.length}</em>`, ''],
+    ['95% PI 涵蓋率', (cover * 100).toFixed(1) + '%', ''],
+  ].map(([a, b, d]) => `<div class="kpi"><small>${a}${d ? ' · ' + d : ''}</small><strong>${b}</strong></div>`).join('');
+  $('business').innerHTML = P.business || '';
+
+  // stats
+  const isBest = M.rmse <= globalBest.rmse + 1e-9;
+  $('stats').innerHTML = [
+    ['測試集 RMSE', fmt(M.rmse), '越低越好', isBest ? '<span class="tag amber">★ 最佳</span>' : ''],
+    ['測試集 R²', M.r2.toFixed(4), `解釋了 ${(M.r2 * 100).toFixed(2)}% 的 ${esc(yName)} 變異`, ''],
+    ['調整後 R²', Number.isFinite(M.adj) ? M.adj.toFixed(4) : '—', '扣除特徵數量的影響', ''],
+    ['平均絕對誤差 MAE', fmt(M.mae), '測試集平均每筆誤差', ''],
+    ['F 統計量', M.fstat.toFixed(1), M.fp < 0.05 ? '整體模型顯著（α = 0.05）' : '整體模型不顯著（α = 0.05）', `<span class="tag ${M.fp < 0.05 ? '' : 'amber'}">p ${M.fp < 1e-4 ? '< 0.0001' : '= ' + M.fp.toFixed(4)}</span>`],
+  ].map(([kk, v, d, t]) => `<div class="stat"><div class="k">${kk} ${t}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+  // active predictors
+  $('active').innerHTML = `<b>目前使用 ${k} 個特徵：</b> ` + M.F.map(j => `<span class="tag indigo">${esc(feats[j].name)}</span>`).join(' ');
+  $('razor').textContent = isBest
+    ? `★ 這就是誤差最低的組合：RMSE ${fmt(M.rmse)}、R² ${M.r2.toFixed(4)}`
+    : `所有方法中最佳為 k = ${globalBest.k}（RMSE ${fmt(globalBest.rmse)}）`;
+  $('razor').className = 'tag' + (isBest ? ' amber' : '');
+
+  // charts
+  const ds = (all ? METHODS : METHODS.filter(m => m.id === state.method)).map((m, i) => {
+    const list = results[m.id].list, ci = METHODS.indexOf(m);
+    return metric => ({
+      label: m.name, data: list.map(r => ({ x: r.k, y: r[metric] })), borderColor: COLORS[ci], backgroundColor: COLORS[ci], tension: 0,
+      // gold dot = optimal k; big pink ring = currently selected k
+      pointRadius: list.map(r => !all && r.k === state.k ? 10 : r === results[m.id].best ? 7 : 4),
+      pointBackgroundColor: list.map(r => r === results[m.id].best ? '#fbbf24' : !all && r.k === state.k ? '#0b1120' : COLORS[ci]),
+      pointBorderColor: list.map(r => !all && r.k === state.k ? '#fb7185' : r === results[m.id].best ? '#fbbf24' : COLORS[ci]),
+      pointBorderWidth: list.map(r => !all && r.k === state.k ? 4 : 1),
+    });
+  });
+  for (const [id, metric] of [['rmseChart', 'rmse'], ['r2Chart', 'r2']]) {
+    charts[id]?.destroy();
+    charts[id] = new Chart($(id), {
+      type: 'line', data: { datasets: ds.map(f => f(metric)) },
+      options: {
+        parsing: true, animation: false, plugins: { legend: { display: all } },
+        scales: { x: { type: 'linear', ticks: { stepSize: 1 }, title: { display: true, text: '特徵數 k' } },
+                  y: { title: { display: true, text: metric === 'rmse' ? 'RMSE' : 'R²' } } },
+      },
+    });
+  }
+
+  // compare table
+  $('compareCard').hidden = !all;
+  if (all) $('compareTbl').innerHTML = '<tr><th>方法</th><th>最佳 k</th><th>選出的特徵</th><th>測試集 RMSE</th><th>R²</th></tr>' +
+    METHODS.map(m => { const b = results[m.id].best; return `<tr><td><b>${m.name}</b></td><td>${b.k}</td><td>${b.F.map(j => esc(feats[j].name)).join(', ')}</td><td class="mono">${fmt(b.rmse)}</td><td class="mono">${b.r2.toFixed(4)}</td></tr>`; }).join('');
+
+  // prediction plot with 95% CI / PI (test set sorted by prediction)
+  const order = yte.map((_, i) => i).sort((a, b) => M.yhTe[a] - M.yhTe[b]);
+  const seq = arr => order.map((i, x) => ({ x: x + 1, y: arr[i] }));
+  const inside = yte.filter((v, i) => v >= M.piLo[i] && v <= M.piHi[i]).length;
+  $('intervalCap').innerHTML = `測試樣本依預測值排序。深色帶 = 平均值的 95% 信賴區間（CI），淺色帶 = 單筆新觀測的 95% 預測區間（PI）。
+    PI 涵蓋率：<b>${inside} / ${yte.length}（${(inside / yte.length * 100).toFixed(1)}%）</b>，理論值約 95%。`;
+  charts.intervalChart?.destroy();
+  charts.intervalChart = new Chart($('intervalChart'), {
+    type: 'line',
+    data: { datasets: [
+      { label: '95% 預測區間 PI', data: seq(M.piHi), borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(45,212,191,.12)' },
+      { label: '95% PI 下界', data: seq(M.piLo), borderWidth: 0, pointRadius: 0 },
+      { label: '95% 信賴區間 CI', data: seq(M.ciHi), borderWidth: 0, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(45,212,191,.4)' },
+      { label: '95% CI 下界', data: seq(M.ciLo), borderWidth: 0, pointRadius: 0 },
+      { label: '預測值 ŷ', data: seq(M.yhTe), borderColor: '#2dd4bf', borderWidth: 2, pointRadius: 0 },
+      { label: '實際值 y', data: seq(yte), showLine: false, pointRadius: 2.5,
+        backgroundColor: order.map(i => yte[i] < M.piLo[i] || yte[i] > M.piHi[i] ? '#fb7185' : '#fbbf24') },
+    ] },
+    options: {
+      animation: false, interaction: { mode: 'nearest', intersect: false },
+      plugins: { legend: { labels: { filter: it => !it.text.includes('下界') } } },
+      scales: { x: { type: 'linear', title: { display: true, text: '測試樣本（依預測值排序）' } },
+                y: { title: { display: true, text: yName } } },
+    },
+  });
+
+  // equation
+  const nf = v => Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 4 });
+  $('equation').innerHTML = `${esc(yName)} = <b>${M.b[0] < 0 ? '-' : ''}${nf(M.b[0])}</b>` +
+    M.F.map((j, i) => ` ${M.b[i + 1] < 0 ? '−' : '+'} ${nf(M.b[i + 1])} × <b>(${esc(feats[j].name)})</b>`).join('');
+
+  // coefficient table
+  $('coefTbl').innerHTML = '<tr><th>變數</th><th>係數 β</th><th>標準誤</th><th>t 值</th><th>p 值</th><th>95% 信賴區間</th><th>VIF</th></tr>' +
+    M.b.map((b, i) => {
+      const p = M.p[i], vf = i ? M.vif[i - 1] : null;
+      return `<tr><td><b>${i ? esc(feats[M.F[i - 1]].name) : '截距 β₀'}</b></td><td class="mono"><b>${b.toFixed(4)}</b></td>
+        <td class="mono">${M.se[i].toFixed(4)}</td><td class="mono">${M.t[i].toFixed(3)}</td>
+        <td><span class="tag ${p < 0.05 ? '' : 'amber'}">${fmtP(p)}${p < 0.05 ? ' 顯著' : ' 不顯著'}</span></td>
+        <td class="mono">[${M.lo[i].toFixed(2)}, ${M.hi[i].toFixed(2)}]</td>
+        <td>${vf == null ? '—' : `<span class="tag ${vf < 5 ? '' : 'amber'}">${vf.toFixed(2)} ${vf < 5 ? '正常' : '偏高'}</span>`}</td></tr>`;
+    }).join('');
+
+  // live predictor
+  const srcs = [...new Set(M.F.map(j => feats[j].src))];
+  const trainRows = D.rows.filter((_, i) => !teIdx.includes(i));
+  $('inputs').innerHTML = srcs.map(j => {
+    const h = esc(D.header[j]);
+    if (!D.numeric[j]) {
+      const lv = [...new Set(D.rows.map(r => r[j]))].sort();
+      return `<div class="field"><div class="h">${h}</div><select data-src="${j}">${lv.map(l => `<option>${esc(l)}</option>`).join('')}</select></div>`;
+    }
+    const vals = D.rows.map(r => r[j]).filter(v => v !== '').map(Number), lo = Math.min(...vals), hi = Math.max(...vals);
+    const trv = trainRows.map(r => r[j]).filter(v => v !== '').map(Number), mean = sum(trv) / trv.length;
+    const step = (hi - lo) / 200 || 1, v = +mean.toPrecision(4);
+    return `<div class="field"><div class="h">${h}<span id="lbl${j}">${v}</span></div>
+      <input type="number" data-src="${j}" value="${v}" step="any">
+      <input type="range" data-range="${j}" min="${lo}" max="${hi}" step="${step}" value="${v}"></div>`;
+  }).join('');
+  const update = () => {
+    const row = [];
+    $('inputs').querySelectorAll('[data-src]').forEach(el => row[+el.dataset.src] = el.value);
+    const parts = M.F.map((j, i) => [feats[j].name, M.b[i + 1] * feats[j].f(row)]);
+    const y = M.b[0] + sum(parts.map(p => p[1])), dg = diagnose(M);
+    const x0 = [1, ...M.F.map(j => feats[j].f(row))], h = sum(x0.map((a, i) => a * sum(x0.map((b2, j) => dg.iM[i][j] * b2))));
+    const half = tCrit(dg.df) * Math.sqrt(dg.sigma2 * (1 + h));
+    $('predName').textContent = yName;
+    $('predVal').textContent = fmt(y);
+    $('predDetail').innerHTML = `95% 預測區間：${fmt(y - half)} ~ ${fmt(y + half)}<br><br>各特徵貢獻：<br>` +
+      parts.map(([n, v]) => `${esc(n)}: ${v >= 0 ? '+' : ''}${fmt(v, 0)}`).join(' · ');
+  };
+  $('inputs').querySelectorAll('input[type=number]').forEach(el => el.oninput = () => {
+    const r = $('inputs').querySelector(`[data-range="${el.dataset.src}"]`); r.value = el.value; $('lbl' + el.dataset.src).textContent = el.value; update();
+  });
+  $('inputs').querySelectorAll('input[type=range]').forEach(el => el.oninput = () => {
+    const nIn = $('inputs').querySelector(`input[type=number][data-src="${el.dataset.range}"]`); nIn.value = el.value; $('lbl' + el.dataset.range).textContent = el.value; update();
+  });
+  $('inputs').querySelectorAll('select').forEach(el => el.onchange = update);
+  update();
+
+  // residuals
+  const rows = yte.map((v, i) => ({ id: teIdx[i], a: v, p: M.yhTe[i], r: v - M.yhTe[i] })).sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 10);
+  $('residTbl').innerHTML = '<tr><th>排名</th><th>樣本</th><th>實際值</th><th>預測值</th><th>殘差</th><th>絕對誤差</th><th>誤差 %</th><th>判定</th></tr>' +
+    rows.map((x, i) => {
+      const high = Math.abs(x.r) > 1.2 * M.rmse;
+      return `<tr><td><b>#${i + 1}</b></td><td>${P.item} #${x.id}</td><td class="mono">${fmt(x.a)}</td><td class="mono">${fmt(x.p)}</td>
+        <td class="${x.r >= 0 ? 'pos' : 'neg'}">${x.r >= 0 ? '+' : ''}${fmt(x.r)}</td><td class="mono">${fmt(Math.abs(x.r))}</td>
+        <td>${x.a ? (Math.abs(x.r / x.a) * 100).toFixed(2) + '%' : '—'}</td>
+        <td><span class="tag ${high ? 'amber' : ''}">${high ? '離群' : '正常'}</span></td></tr>`;
+    }).join('');
+
+  renderAssumptions(M);
+  renderAdvanced(yName);
+}
+
+function renderAssumptions(M) {
+  const g = diagnose(M), ok = (pass, warn) => pass ? '<span class="tag">✓ 符合</span>' : `<span class="tag ${warn ? 'amber' : 'red'}">⚠ 違反</span>`;
+  const pf = v => Number.isFinite(v) ? fmtP(v) : '—';
+  $('assumpTbl').innerHTML = '<tr><th>#</th><th>假設</th><th>檢定方法</th><th>統計量</th><th>p 值</th><th>判定</th><th>說明</th></tr>' + [
+    ['①', '線性', 'Ramsey RESET（加入 ŷ²）', '—', pf(g.resetP), ok(g.resetP > 0.05, true), 'p 小表示存在未捕捉的非線性關係'],
+    ['②', '誤差獨立', 'Durbin-Watson', g.dw.toFixed(3), '—', ok(g.dw > 1.5 && g.dw < 2.5, true), '接近 2 表示無自相關；資料依國家、年份排序，偏低代表同一國家的誤差相關'],
+    ['③', '同變異', 'Breusch-Pagan', g.bp.toFixed(2), pf(g.bpp), ok(g.bpp > 0.05, true), 'p 小表示殘差變異隨 X 改變（異質變異）'],
+    ['④', '殘差常態', 'Jarque-Bera', g.jb.toFixed(1), pf(g.jbp), ok(g.jbp > 0.05, true), `偏態 ${g.skew.toFixed(2)}、峰態 ${g.kurt.toFixed(2)}（常態為 0、3）`],
+    ['⑤', '無嚴重共線性', 'VIF 最大值', g.maxVif.toFixed(2), '—', ok(g.maxVif < 10, g.maxVif < 30), 'VIF > 10 表示共線性嚴重，係數不穩定'],
+  ].map(r => `<tr>${r.map((v, i) => `<td${i === 2 || i === 3 || i === 4 ? ' class="mono"' : ''}>${v}</td>`).join('')}</tr>`).join('');
+
+  const n = g.e.length, step = Math.max(1, Math.floor(n / 900)), idx = [...Array(n).keys()].filter(i => i % step === 0);
+  charts.residFitChart?.destroy();
+  charts.residFitChart = new Chart($('residFitChart'), {
+    type: 'scatter',
+    data: { datasets: [{ data: idx.map(i => ({ x: g.fit[i], y: g.e[i] })), backgroundColor: 'rgba(45,212,191,.45)', pointRadius: 2 }] },
+    options: { animation: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: '預測值 ŷ（訓練集）' } }, y: { title: { display: true, text: '殘差' } } } },
+  });
+  const sd = Math.sqrt(sum(g.e.map(v => v * v)) / g.df), srt = [...g.e].sort((a, b) => a - b);
+  const qq = idx.map(i => ({ x: normInv((i + 0.5) / n), y: srt[i] / sd })), lim = Math.max(...qq.map(o => Math.abs(o.x)));
+  charts.qqChart?.destroy();
+  charts.qqChart = new Chart($('qqChart'), {
+    type: 'scatter',
+    data: { datasets: [
+      { data: qq, backgroundColor: 'rgba(167,139,250,.55)', pointRadius: 2 },
+      { type: 'line', data: [{ x: -lim, y: -lim }, { x: lim, y: lim }], borderColor: '#fbbf24', borderWidth: 1.5, pointRadius: 0 },
+    ] },
+    options: { animation: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: '理論常態分位數' } }, y: { title: { display: true, text: '標準化殘差' } } } },
+  });
+}
+
+function renderAdvanced(yName) {
+  const show = !!ADV && P.key === 'life' && yName === 'Life expectancy';
+  $('advanced').hidden = !show;
+  if (!show) return;
+  const f3 = v => v == null ? '—' : (+v).toFixed(3);
+  const bestCv = Math.min(...ADV.model_comparison.map(r => r.rmse));
+  $('modelCmpTbl').innerHTML = '<tr><th>模型</th><th>測試 RMSE</th><th>MAE</th><th>R²</th><th>CV RMSE</th><th>α</th><th>非零係數</th></tr>' +
+    ADV.model_comparison.map(r => `<tr class="${r.rmse === bestCv ? 'hl' : ''}"><td><b>${esc(r.model)}</b></td><td class="mono">${f3(r.rmse)}</td><td class="mono">${f3(r.mae)}</td>
+      <td class="mono">${(+r.r2).toFixed(4)}</td><td class="mono">${f3(r.cv_rmse)}</td><td class="mono">${r.alpha != null ? (+r.alpha).toPrecision(3) : '—'}</td>
+      <td class="mono">${r.nonzero ?? '—'}</td></tr>`).join('');
+  const names = { forward: 'Forward SFS', rfe: 'RFE', lasso: 'Lasso' };
+  charts.cvChart?.destroy();
+  charts.cvChart = new Chart($('cvChart'), {
+    type: 'line',
+    data: { datasets: [
+      ...Object.entries(ADV.cv_by_k).map(([m, v]) => ({ label: `${names[m]}（5-fold CV）`, data: v.map((y, i) => ({ x: i + 1, y })),
+        borderColor: COLORS[METHODS.findIndex(o => o.id === m)], pointRadius: 2 })),
+      { label: 'RFE（測試集）', data: results.rfe.list.map(r => ({ x: r.k, y: r.rmse })), borderColor: '#fbbf24', borderDash: [5, 4], pointRadius: 0 },
+    ] },
+    options: { animation: false, scales: { x: { type: 'linear', ticks: { stepSize: 1 }, title: { display: true, text: '特徵數 k' } }, y: { title: { display: true, text: 'RMSE（歲）' } } } },
+  });
+  $('improveCap').innerHTML = `對偏態 > 2 的特徵取 log1p：${ADV.skewed_log1p.map(esc).join('、')}；再以 Cook's distance > 4/n 找出訓練集影響點並移除。全部 20 個特徵、OLS、同一個測試集。`;
+  const base = ADV.improvement[0].rmse;
+  $('improveTbl').innerHTML = '<tr><th>版本</th><th>訓練筆數</th><th>測試 RMSE</th><th>改善</th><th>MAE</th><th>R²</th></tr>' +
+    ADV.improvement.map(r => `<tr><td><b>${esc(r.variant)}</b></td><td class="mono">${r.train_rows}</td><td class="mono">${f3(r.rmse)}</td>
+      <td class="${r.rmse < base ? 'pos' : 'neg'}">${r === ADV.improvement[0] ? '—' : ((r.rmse - base) / base * 100).toFixed(1) + '%'}</td>
+      <td class="mono">${f3(r.mae)}</td><td class="mono">${(+r.r2).toFixed(4)}</td></tr>`).join('');
+}
+
+// ---------- wiring ----------
+$('problem').onchange = () => { $('url').value = PRESETS[$('problem').value].url; if ($('url').value) load(); else $('url').focus(); };
+$('load').onclick = load;
+$('url').onkeydown = e => { if (e.key === 'Enter') load(); };
+$('target').onchange = run;
+$('url').value = PRESETS.life.url;
+load();
+// highlight the CRISP-DM step currently on screen
+const navLinks = [...document.querySelectorAll('#navSteps a')];
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+}), { rootMargin: '-40% 0px -55% 0px' });
+['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].forEach(id => io.observe($(id)));
+</script>
+</body>
+</html>
