@@ -11,13 +11,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root { color-scheme: dark;
-    --bg: #0b1120; --card: #111a2e; --card2: #0d1526; --line: #24304a; --text: #e2e8f0; --muted: #8b9ab3;
+    --bg: #0b1120; --card: #111a2e; --card2: #0d1526; --line: #24304a; --text: #e2e8f0; --muted: #a3b1c6;
     --brand: #2dd4bf; --brand2: #0f766e; --soft: rgba(45, 212, 191, .12); --green: #2dd4bf; --greenSoft: rgba(45, 212, 191, .15);
     --amber: #fbbf24; --amberSoft: rgba(251, 191, 36, .15); --red: #fb7185; --violet: #a78bfa; --mono: 'IBM Plex Mono', monospace;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; scroll-padding-top: 76px; }
-  body { margin: 0; font-family: 'Noto Sans TC', system-ui, sans-serif; color: var(--text); font-size: 14px; line-height: 1.6;
+  body { margin: 0; font-family: 'Noto Sans TC', system-ui, sans-serif; color: var(--text); font-size: 15px; line-height: 1.75;
     background: radial-gradient(1200px 600px at 85% -10%, rgba(45, 212, 191, .10), transparent 60%),
                 radial-gradient(900px 500px at -10% 10%, rgba(251, 191, 36, .06), transparent 60%), var(--bg); background-attachment: fixed; }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 48px; }
@@ -61,7 +61,23 @@
   .card:hover { border-color: #2f3d5c; }
   .card h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
   .card h3::before { content: ''; width: 4px; height: 15px; border-radius: 2px; background: var(--brand); }
-  .sub { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  /* plain-language takeaways + collapsible technical detail */
+  .say { font-size: 16px; font-weight: 500; line-height: 1.8; margin: 0 0 16px; padding: 12px 16px; border-left: 4px solid var(--amber); background: rgba(251, 191, 36, .07); border-radius: 0 10px 10px 0; }
+  .say b { color: var(--amber); }
+  .tldr { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 10px; counter-reset: t; }
+  .tldr li { counter-increment: t; display: grid; grid-template-columns: 30px 1fr; gap: 10px; font-size: 16px; line-height: 1.7; color: #e2e8f0; }
+  .tldr li::before { content: counter(t); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 13px var(--mono); background: var(--brand); color: #042f2e; margin-top: 2px; }
+  .tldr li b { color: var(--amber); }
+  details.more { margin-top: 14px; border: 1px dashed var(--line); border-radius: 10px; padding: 0 14px; }
+  details.more > summary { cursor: pointer; padding: 10px 0; color: var(--muted); font-size: 13px; font-weight: 700; }
+  details.more > summary:hover { color: var(--brand); }
+  details.more[open] { padding-bottom: 14px; }
+  .checks5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .checks5 div { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .checks5 b { display: block; font-size: 15px; } .checks5 small { color: var(--muted); font-size: 12px; line-height: 1.5; display: block; }
+  .checks5 .ok { color: var(--brand); } .checks5 .no { color: var(--amber); }
+  @media (max-width: 900px) { .checks5 { grid-template-columns: 1fr 1fr; } }
   .label { font-size: 12px; font-weight: 700; color: var(--brand); margin: 16px 0 8px; display: flex; gap: 8px; align-items: center; }
   .label i { font-style: normal; width: 20px; height: 20px; border: 1px solid var(--brand); border-radius: 50%; display: grid; place-items: center; font-size: 11px; }
   .label:first-child { margin-top: 0; }
@@ -103,7 +119,7 @@
   .eq code b { color: var(--brand); font-weight: 600; }
   .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  th { background: var(--card2); font-size: 12px; font-weight: 500; color: var(--muted); text-align: left; padding: 9px 12px; white-space: nowrap; }
+  th { background: var(--card2); font-size: 13px; font-weight: 500; color: var(--muted); text-align: left; padding: 9px 12px; white-space: nowrap; }
   td { padding: 9px 12px; border-top: 1px solid var(--line); }
   tr:hover td { background: rgba(255, 255, 255, .02); }
   td.mono { font-family: var(--mono); }
@@ -149,7 +165,9 @@
   <section class="hero" id="p1">
     <div class="eyebrow">CRISP-DM · MULTIPLE LINEAR REGRESSION</div>
     <h1>多元線性迴歸 × <span>特徵選擇</span></h1>
-    <p id="heroText">載入中…</p>
+    <p style="margin:0 0 10px;color:var(--amber);font-weight:700">三句話看懂</p>
+    <ol class="tldr" id="tldr"><li>載入中…</li></ol>
+    <p id="heroText" class="sub"></p>
     <div class="kpis" id="heroKpis"></div>
   </section>
 
@@ -171,7 +189,8 @@
   </section>
 
   <!-- 02 Data Understanding -->
-  <div class="phase" id="p2"><span class="no">02</span><div><h2>資料理解<small>Data Understanding</small></h2><p>資料規模、缺值分布，以及每個特徵和目標的相關程度。</p></div></div>
+  <div class="phase" id="p2"><span class="no">02</span><div><h2>資料理解<small>Data Understanding</small></h2><p>資料長什麼樣？哪些因素和答案最有關？</p></div></div>
+  <p class="say" id="say2"></p>
   <div class="grid g4" id="dataStats"></div>
   <div class="grid g2">
     <section class="card"><h3>各特徵與目標的相關係數</h3><p class="sub">Pearson r，依絕對值排序；綠色正相關、粉紅負相關。</p><div id="corrBox" style="position:relative"><canvas id="corrChart"></canvas></div></section>
@@ -179,11 +198,13 @@
   </div>
 
   <!-- 03 Data Preparation -->
-  <div class="phase" id="p3"><span class="no">03</span><div><h2>資料準備<small>Data Preparation</small></h2><p>所有步驟都只用訓練集的資訊，避免資料洩漏。</p></div></div>
+  <div class="phase" id="p3"><span class="no">03</span><div><h2>資料準備<small>Data Preparation</small></h2><p>把資料整理到模型能用。</p></div></div>
+  <p class="say">把資料整理乾淨：<b>刪掉沒有答案的資料、補上缺值、把文字轉成數字</b>，再切出 20% 當「期末考」（測試集），模型訓練時完全看不到。</p>
   <section class="card"><ul class="steps-list" id="prepList"></ul></section>
 
   <!-- 04 Modeling -->
-  <div class="phase" id="p4"><span class="no">04</span><div><h2>建模<small>Modeling</small></h2><p>5 種特徵選擇方法 × k = 1…p，最終模型都用 OLS 在訓練集上估計。</p></div></div>
+  <div class="phase" id="p4"><span class="no">04</span><div><h2>建模<small>Modeling</small></h2><p>要用哪幾個因素？用 5 種方法挑因素，每種都試 k = 1…p 個。</p></div></div>
+  <p class="say" id="say4"></p>
   <section class="card">
     <div class="label"><i>1</i>特徵選擇方法</div>
     <div class="row" id="methods"></div>
@@ -209,64 +230,70 @@
   </section>
 
   <section class="card eq">
-    <h3>迴歸方程式</h3><p class="sub">以訓練集 OLS 估計。</p>
+    <h3>迴歸方程式</h3><p class="sub">模型就是這條式子：每個因素乘上一個權重，全部加起來就是預測值。</p>
     <code id="equation"></code>
-  </section>
-
-  <section class="card">
-    <h3>係數與統計檢定</h3>
-    <p class="sub">估計值、標準誤、t 值、p 值、95% 信賴區間與 VIF（訓練集；VIF &gt; 5 表示共線性偏高）。</p>
-    <div class="tbl"><table id="coefTbl"></table></div>
+    <details class="more"><summary>▸ 展開看細節：係數、標準誤、t 值、p 值、95% 信賴區間、VIF</summary>
+      <p class="sub">p &lt; 0.05 表示這個因素的影響在統計上可信；VIF &gt; 5 表示它和其他因素太像（共線性）。</p>
+      <div class="tbl"><table id="coefTbl"></table></div>
+    </details>
   </section>
 
   <!-- 05 Evaluation -->
-  <div class="phase" id="p5"><span class="no">05</span><div><h2>評估<small>Evaluation</small></h2><p>預測區間、迴歸五大假設、交叉驗證與正則化模型比較、殘差診斷。</p></div></div>
+  <div class="phase" id="p5"><span class="no">05</span><div><h2>評估<small>Evaluation</small></h2><p>模型準不準？可不可信？還能不能更好？</p></div></div>
+  <p class="say" id="say5"></p>
   <section class="card">
-    <h3>測試集預測圖與 95% 區間</h3>
+    <h3>預測值 vs 實際值（附 95% 範圍）</h3>
     <p class="sub" id="intervalCap">測試樣本依預測值排序。深色帶 = 平均值的 95% 信賴區間（CI），淺色帶 = 單筆新觀測的 95% 預測區間（PI）。</p>
     <canvas id="intervalChart"></canvas>
   </section>
 
   <section class="card">
-    <h3>迴歸五大假設檢定</h3>
-    <p class="sub">針對目前選擇的模型，以訓練集殘差檢定（α = 0.05）。</p>
-    <div class="tbl"><table id="assumpTbl"></table></div>
-    <div class="grid g2" style="margin:16px 0 0">
-      <div><p class="sub" style="margin-bottom:6px">殘差 vs 預測值（線性、同變異）</p><canvas id="residFitChart"></canvas></div>
-      <div><p class="sub" style="margin-bottom:6px">常態 Q-Q 圖（常態性）</p><canvas id="qqChart"></canvas></div>
-    </div>
-    <div class="note">樣本數很大時（例如上千筆），正式檢定對很小的偏離也會顯著，所以要搭配圖形判斷偏離程度。違反假設時，係數的點估計仍然不偏，但標準誤與區間可能不準。</div>
+    <h3>健康檢查：迴歸的五個前提</h3>
+    <p class="sub">線性迴歸要可信，資料要符合這五個前提（針對目前選擇的模型）。</p>
+    <div class="checks5" id="assumpChips"></div>
+    <div class="note">不符合不代表模型不能用：<b>預測值仍然可用</b>，但 p 值和預測範圍要保守看。樣本上千筆時，檢定對很小的偏離也會判「不符合」。</div>
+    <details class="more"><summary>▸ 展開看細節：檢定方法、統計量、p 值、殘差圖、Q-Q 圖</summary>
+      <div class="tbl"><table id="assumpTbl"></table></div>
+      <div class="grid g2" style="margin:16px 0 0">
+        <div><p class="sub" style="margin-bottom:6px">殘差 vs 預測值（線性、同變異）</p><canvas id="residFitChart"></canvas></div>
+        <div><p class="sub" style="margin-bottom:6px">常態 Q-Q 圖（常態性）</p><canvas id="qqChart"></canvas></div>
+      </div>
+    </details>
   </section>
 
   <section id="advanced" hidden>
-    <div class="grid g2">
-      <section class="card">
-        <h3>OLS vs Ridge vs Lasso</h3>
-        <p class="sub">Ridge / Lasso 的 α 以 5-fold 交叉驗證選擇；CV RMSE 為訓練集 5-fold 平均。</p>
-        <div class="tbl"><table id="modelCmpTbl"></table></div>
-      </section>
-      <section class="card">
-        <h3>交叉驗證：最佳 k 穩不穩？</h3>
-        <p class="sub">訓練集 5-fold CV RMSE（實線）vs 單一測試集 RMSE（虛線）。</p>
-        <canvas id="cvChart"></canvas>
-      </section>
-    </div>
     <section class="card">
-      <h3>模型改善：log 轉換 + 影響點</h3>
-      <p class="sub" id="improveCap"></p>
+      <h3>能不能更好？三種改進嘗試</h3>
+      <p class="say" id="advSay" style="margin-top:8px"></p>
       <div class="tbl"><table id="improveTbl"></table></div>
+      <p class="sub" id="improveCap" style="margin-top:10px"></p>
+      <details class="more"><summary>▸ 展開看細節：OLS vs Ridge vs Lasso、5-fold 交叉驗證</summary>
+        <div class="grid g2" style="margin:8px 0 0">
+          <div>
+            <p class="sub">Ridge / Lasso 的 α 以 5-fold 交叉驗證選擇；CV RMSE 為訓練集 5-fold 平均。</p>
+            <div class="tbl"><table id="modelCmpTbl"></table></div>
+          </div>
+          <div>
+            <p class="sub">最佳 k 穩不穩？訓練集 5-fold CV RMSE（實線）vs 單一測試集 RMSE（虛線）。</p>
+            <canvas id="cvChart"></canvas>
+          </div>
+        </div>
+      </details>
+      <p class="sub" style="margin:10px 0 0">※ 本區由 <code>analysis.py</code>（scikit-learn + statsmodels）預先計算，只對 Life Expectancy 資料集顯示。</p>
     </section>
-    <p class="sub">※ 本區由 <code>analysis.py</code>（scikit-learn + statsmodels）預先計算，只對 Life Expectancy 資料集顯示。</p>
   </section>
 
   <section class="card">
-    <h3>測試集殘差與離群值</h3>
-    <p class="sub">依 |殘差| 排序的前 10 筆測試樣本；|殘差| &gt; 1.2 × RMSE 標記為離群。</p>
-    <div class="tbl"><table id="residTbl"></table></div>
+    <h3>猜錯最多的 10 筆</h3>
+    <p class="sub">誤差超過 1.2 × RMSE 標記為離群。</p>
+    <details class="more"><summary>▸ 展開看表格</summary>
+      <div class="tbl"><table id="residTbl"></table></div>
+    </details>
   </section>
 
   <!-- 06 Deployment -->
-  <div class="phase" id="p6"><span class="no">06</span><div><h2>部署<small>Deployment</small></h2><p>用目前的模型預測新樣本；網站與 API 的使用方式。</p></div></div>
+  <div class="phase" id="p6"><span class="no">06</span><div><h2>部署<small>Deployment</small></h2><p>怎麼使用這個模型？</p></div></div>
+  <p class="say" id="say6"></p>
   <div class="grid g2">
     <section class="card">
       <h3>即時預測</h3>
@@ -301,7 +328,7 @@
 <script>
 // ---------- presets ----------
 const PRESETS = {
-  life:    { name: 'Life Expectancy (WHO)', url: 'data/Life_Expectancy_Data.csv', target: 'Life expectancy', money: false, item: '國家年',
+  life:    { name: 'Life Expectancy (WHO)', url: 'data/Life_Expectancy_Data.csv', target: 'Life expectancy', money: false, item: '國家年', unit: ' 歲',
              source: 'https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who',
              business: '<b>商業理解：</b>WHO 與各國政府需要知道哪些可控因素（疫苗接種、教育、醫療支出、疾病防治）最能影響國民平均壽命，才能決定公衛預算的優先順序。目標是用各國每年的健康、經濟與社會指標預測當年的平均壽命（歲），成功標準為測試集 R² > 0.8，且係數方向可以合理解釋。資料來源：<a href="https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who" style="color:var(--brand)">Kaggle · kumarajarshi/life-expectancy-who</a>。' },
   startup: { name: '50 Startups', url: 'https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/50_Startups.csv',
@@ -323,14 +350,14 @@ const METHODS = [
   { id: 'exhaustive', name: 'Exhaustive', tag: '窮舉子集' },
 ];
 const COLORS = ['#2dd4bf', '#a78bfa', '#38bdf8', '#f472b6', '#a3e635'];
-Chart.defaults.color = '#8b9ab3';
+Chart.defaults.color = '#a3b1c6';
 Chart.defaults.borderColor = '#24304a';
 Chart.defaults.font.family = "'Noto Sans TC', system-ui, sans-serif";
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const sum = a => a.reduce((s, v) => s + v, 0);
 
-let ADV = null, PREP = {}, P, D, feats, Xtr, ytr, Xte, yte, teIdx, G, c, results, state = { method: 'lasso', k: null }, charts = {};
+let ADV = null, PREP = {}, CORR = [], P, D, feats, Xtr, ytr, Xte, yte, teIdx, G, c, results, state = { method: 'lasso', k: null }, charts = {};
 
 // ---------- csv ----------
 // ponytail: naive CSV split — no commas inside quoted fields; swap in PapaParse if a dataset needs it
@@ -641,6 +668,8 @@ async function run() {
   PREP = { n, dropped: D.all.length - n, nMissing, skipped, ntr: tr.length, nte: te.length, p, t,
     encoded: feats.filter(f => f.level).map(f => f.name), python: !!lists.python };
   renderData();
+  // open on the overall best method so the summary and the "current model" agree
+  state.method = METHODS.map(m => m.id).reduce((a, b) => results[b].best.rmse < results[a].best.rmse ? b : a);
   state.k = null;
   render();
 }
@@ -664,6 +693,10 @@ function renderData() {
     const sxy = sum(pr.map(q => (q[0] - mx) * (q[1] - mY))), sxx = sum(pr.map(q => (q[0] - mx) ** 2)), syy = sum(pr.map(q => (q[1] - mY) ** 2));
     return { h, r: sxy / Math.sqrt(sxx * syy) };
   }).filter(o => o && Number.isFinite(o.r)).sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 25);
+  CORR = corr;
+  const top = (s, n) => corr.filter(o => s * o.r > 0).slice(0, n).map(o => `<b>${esc(o.h)}</b>`).join('、') || '（無）';
+  $('say2').innerHTML = `共 ${all.length.toLocaleString()} 筆資料、${PREP.p} 個候選因素。和 ${esc(yName)} 最相關的：
+    越高越好 ${top(1, 2)}；越高越差 ${top(-1, 2)}。${sum(miss) ? `有 ${sum(miss).toLocaleString()} 格缺值，下一步補上。` : ''}`;
   charts.corrChart?.destroy();
   $('corrBox').style.height = Math.max(220, corr.length * 22) + 'px';
   charts.corrChart = new Chart($('corrChart'), {
@@ -723,6 +756,7 @@ function analyzeInBrowser() {
 const fmt = (v, d = 2) => !isFinite(v) ? '—' : P.money
   ? (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })
   : v.toLocaleString('en-US', { maximumFractionDigits: 4 });
+const fh = v => P.money ? fmt(v, 0) : v.toFixed(2); // short number for plain-language lines
 const fmtP = p => p < 1e-4 ? '< 0.0001' : p.toFixed(4);
 
 function current() {
@@ -761,17 +795,27 @@ function render() {
   const full = results.lasso.list.find(r => r.k === feats.length);
 
   // hero
-  $('heroText').innerHTML = `用 Lasso、Forward SFS、RFE、ElasticNet、Exhaustive 五種方法，在 <b>${esc(P.name)}</b> 資料集上挑選特徵來預測
-    <b>${esc(yName)}</b>，比較 k = 1 ~ ${feats.length} 個特徵時的測試集誤差。結果：<b>${globalBest.k} 個特徵</b>時誤差最低${!full || full === globalBest ? '' : full.rmse > globalBest.rmse * 1.02 ? `，全部 ${feats.length} 個特徵反而變差（overfitting）` : `；全部 ${feats.length} 個特徵的誤差幾乎一樣（${fmt(full.rmse)}），用較少特徵就能達到相同效果`}。`;
+  $('heroText').innerHTML = `方法：用 Lasso、Forward SFS、RFE、ElasticNet、Exhaustive 五種方法挑因素，比較 k = 1 ~ ${feats.length} 個因素時的測試集誤差；<b>${globalBest.k} 個</b>時誤差最低${!full || full === globalBest ? '' : full.rmse > globalBest.rmse * 1.02 ? `，全部 ${feats.length} 個特徵反而變差（overfitting）` : `；全部 ${feats.length} 個特徵的誤差幾乎一樣（${fmt(full.rmse)}），用較少特徵就能達到相同效果`}。`;
   const gbMethod = METHODS.find(m => results[m.id].best === globalBest)?.name || '';
   const cover = yte.filter((v, i) => v >= globalBest.piLo[i] && v <= globalBest.piHi[i]).length / yte.length;
   $('heroKpis').innerHTML = [
-    ['最佳測試 RMSE', fmt(globalBest.rmse), `${gbMethod}`],
-    ['測試集 R²', globalBest.r2.toFixed(4), ''],
-    ['選用特徵', `${globalBest.k} <em>/ ${feats.length}</em>`, ''],
-    ['95% PI 涵蓋率', (cover * 100).toFixed(1) + '%', ''],
+    ['平均猜錯（RMSE）', fmt(globalBest.rmse) + (P.unit ? `<em>${P.unit}</em>` : ''), `${gbMethod}`],
+    ['能解釋的差異（R²）', globalBest.r2.toFixed(4), ''],
+    ['用了幾個因素', `${globalBest.k} <em>/ ${feats.length}</em>`, ''],
+    ['95% 範圍猜中率', (cover * 100).toFixed(1) + '%', ''],
   ].map(([a, b, d]) => `<div class="kpi"><small>${a}${d ? ' · ' + d : ''}</small><strong>${b}</strong></div>`).join('');
   $('business').innerHTML = P.business || '';
+  // plain-language takeaways
+  const u = P.unit || '', pos = CORR.find(o => o.r > 0), neg = CORR.find(o => o.r < 0);
+  const lean = Object.values(results).flatMap(r => r.list).filter(r => r.r2 >= 0.95 * globalBest.r2).reduce((a, b) => b.k < a.k ? b : a, globalBest);
+  $('tldr').innerHTML = [
+    `<b>問題：</b>用 ${feats.length} 個因素，預測 <b>${esc(yName)}</b>（${esc(P.name)}）。`,
+    `<b>結果：</b>用 <b>${globalBest.k} 個因素</b>最準，平均猜錯約 <b>${fh(globalBest.rmse)}${u}</b>，能解釋 <b>${Math.round(globalBest.r2 * 100)}%</b> 的差異。`,
+    `<b>關鍵：</b>${pos ? `${esc(pos.h)} 越高，${esc(yName)} 越高` : ''}${pos && neg ? '；' : ''}${neg ? `${esc(neg.h)} 越高，${esc(yName)} 越低` : ''}。`,
+  ].map(s => `<li><span>${s}</span></li>`).join('');
+  $('say4').innerHTML = `用 <b>${globalBest.k} 個因素</b>時誤差最低（${gbMethod}，平均猜錯 ${fh(globalBest.rmse)}${u}）。` +
+    (lean.k < globalBest.k ? `但其實<b>只用 ${lean.k} 個</b>就有最佳模型 95% 以上的解釋力（R² ${lean.r2.toFixed(2)}）。` : '');
+  $('say6').innerHTML = `拉動下方滑桿輸入各因素的數值，就能即時預測 <b>${esc(yName)}</b>，並附上 95% 可能範圍。`;
 
   // stats
   const isBest = M.rmse <= globalBest.rmse + 1e-9;
@@ -914,7 +958,18 @@ function render() {
 }
 
 function renderAssumptions(M) {
-  const g = diagnose(M), ok = (pass, warn) => pass ? '<span class="tag">✓ 符合</span>' : `<span class="tag ${warn ? 'amber' : 'red'}">⚠ 違反</span>`;
+  const g = diagnose(M);
+  const checks = [
+    ['① 線性', '因素和答案是直線關係', g.resetP > 0.05], ['② 獨立', '每筆誤差互不影響', g.dw > 1.5 && g.dw < 2.5],
+    ['③ 同變異', '誤差大小到處差不多', g.bpp > 0.05], ['④ 常態', '誤差呈鐘形分布', g.jbp > 0.05], ['⑤ 共線性', '因素之間不要太像', g.maxVif < 10],
+  ];
+  $('assumpChips').innerHTML = checks.map(([n, d, pass]) =>
+    `<div><b>${n} <span class="${pass ? 'ok' : 'no'}">${pass ? '✓ 符合' : '⚠ 不符合'}</span></b><small>${d}</small></div>`).join('');
+  const nPass = checks.filter(c => c[2]).length, cov = yte.filter((v, i) => v >= M.piLo[i] && v <= M.piHi[i]).length / yte.length;
+  const half = sum(M.piHi.map((h, i) => h - M.piLo[i])) / M.piHi.length / 2;
+  $('say5').innerHTML = `目前模型平均猜錯 <b>${fh(M.rmse)}${P.unit || ''}</b>；給出的「±${P.money ? fmt(half, 0) : half.toFixed(1)}${P.unit || ''}」範圍有 <b>${(cov * 100).toFixed(0)}%</b> 猜中實際值。
+    五個前提 <b>${nPass} / 5</b> 符合${nPass < 5 ? '，所以預測可用，但範圍與 p 值要保守看' : ''}。`;
+  const ok = (pass, warn) => pass ? '<span class="tag">✓ 符合</span>' : `<span class="tag ${warn ? 'amber' : 'red'}">⚠ 違反</span>`;
   const pf = v => Number.isFinite(v) ? fmtP(v) : '—';
   $('assumpTbl').innerHTML = '<tr><th>#</th><th>假設</th><th>檢定方法</th><th>統計量</th><th>p 值</th><th>判定</th><th>說明</th></tr>' + [
     ['①', '線性', 'Ramsey RESET（加入 ŷ²）', '—', pf(g.resetP), ok(g.resetP > 0.05, true), 'p 小表示存在未捕捉的非線性關係'],
@@ -966,7 +1021,11 @@ function renderAdvanced(yName) {
     options: { animation: false, scales: { x: { type: 'linear', ticks: { stepSize: 1 }, title: { display: true, text: '特徵數 k' } }, y: { title: { display: true, text: 'RMSE（歲）' } } } },
   });
   $('improveCap').innerHTML = `對偏態 > 2 的特徵取 log1p：${ADV.skewed_log1p.map(esc).join('、')}；再以 Cook's distance > 4/n 找出訓練集影響點並移除。全部 20 個特徵、OLS、同一個測試集。`;
-  const base = ADV.improvement[0].rmse;
+  const base = ADV.improvement[0].rmse, logV = ADV.improvement[1], mc = ADV.model_comparison;
+  const reg = mc.filter(r => /Ridge|Lasso/.test(r.model)), ols = mc.find(r => /all/.test(r.model) && !/Ridge|Lasso/.test(r.model)) || mc[0];
+  $('advSay').innerHTML = `① <b>取 log 最有效：</b>把 GDP、人口這類差距極大的因素取 log，誤差 ${f3(base)} → <b>${f3(logV.rmse)}${P.unit || ''}</b>（${((logV.rmse - base) / base * 100).toFixed(0)}%）。<br>
+    ② <b>刪掉離群點沒幫助：</b>移除影響力大的資料後誤差 ${f3(ADV.improvement[2].rmse)}，反而略差，所以保留。<br>
+    ③ <b>Ridge / Lasso 沒變好：</b>誤差 ${reg.map(r => f3(r.rmse)).join(' / ')}，和一般迴歸 ${f3(ols.rmse)} 差不多 — 資料夠多，模型本來就不會過度擬合。`;
   $('improveTbl').innerHTML = '<tr><th>版本</th><th>訓練筆數</th><th>測試 RMSE</th><th>改善</th><th>MAE</th><th>R²</th></tr>' +
     ADV.improvement.map(r => `<tr><td><b>${esc(r.variant)}</b></td><td class="mono">${r.train_rows}</td><td class="mono">${f3(r.rmse)}</td>
       <td class="${r.rmse < base ? 'pos' : 'neg'}">${r === ADV.improvement[0] ? '—' : ((r.rmse - base) / base * 100).toFixed(1) + '%'}</td>
@@ -980,6 +1039,8 @@ $('url').onkeydown = e => { if (e.key === 'Enter') load(); };
 $('target').onchange = run;
 $('url').value = PRESETS.life.url;
 load();
+// charts drawn inside a closed <details> have no size yet; resize them when it opens
+document.querySelectorAll('details.more').forEach(d => d.ontoggle = () => d.open && d.querySelectorAll('canvas').forEach(cv => Chart.getChart(cv)?.resize()));
 // highlight the CRISP-DM step currently on screen
 const navLinks = [...document.querySelectorAll('#navSteps a')];
 const io = new IntersectionObserver(es => es.forEach(e => {
