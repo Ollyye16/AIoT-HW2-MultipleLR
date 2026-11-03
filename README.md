@@ -3,6 +3,7 @@
 物聯網應用與資料分析 HW2 · 依 CRISP-DM 流程完成多元線性迴歸、特徵選擇與模型評估。
 
 - **Web（GitHub Pages）**：<https://ollyye16.github.io/AIoT-HW2-MultipleLR/>　· 資訊圖表：<https://ollyye16.github.io/AIoT-HW2-MultipleLR/infographic.html>
+- **報告書 PDF**：[`docs/report.pdf`](docs/report.pdf)　· AI 對話紀錄：[`docs/chat.pdf`](docs/chat.pdf)
 - **資料集**：[Life Expectancy (WHO) — Kaggle, kumarajarshi](https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who)（2,938 筆 × 22 欄，20 個可用特徵）
   - repo 內副本：[`data/Life_Expectancy_Data.csv`](data/Life_Expectancy_Data.csv)（SHA-256 `872125dd…87963b11`，與 Kaggle 原檔相同）
 
